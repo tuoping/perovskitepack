@@ -1,7 +1,7 @@
 from copy import deepcopy
 import dpdata
 from dpdata.lammps.lmp import box2lmpbox
-# from pymatgen.core.operations import SymmOp
+from pymatgen.core.operations import SymmOp
 import numpy as np
 from numpy.linalg import norm
 import random, math
@@ -197,6 +197,8 @@ class Octahedron(object):
             self.phi_II_vectors.append(np.arccos(np.dot((normal_v-proj_v_a2), normal_axis[0]))-0.5*np.pi)
 
 
+
+
 class mesh_point(object):
 
     def __init__(self, index, coord, obj = None):
@@ -301,7 +303,7 @@ class Molecule(object):
 
     def __init__(self, indices, coords, cell):
         self.cell = cell
-        self.coords_mol = coords
+        self.coords_mol = np.array(coords)
         self.indices_mol = indices
         self.set_longaxis()
         self.set_polaraxis()
@@ -319,9 +321,7 @@ class Molecule(object):
 
     def set_center_postion(self, coord):
         assert len(coord) == 3, "Pb coord must be a list of 3 numbers"
-        _c = phys2Inter(np.array(coord), self.cell)
-        pc = apply_pbc(_c,self.cell)+0.5
-        self.center_coord = Inter2phys(pc,self.cell) 
+        self.center_coord = coord
 
     def angle_longaxis(self, axis=[0,0,1]):
         self.angle_longaxis = []
@@ -340,6 +340,24 @@ class Molecule(object):
         pC = apply_pbc(_C,self.cell)+0.5
         C = Inter2phys(pC,self.cell)
         self.mesh_point = mesh.map_coord_mesh(C)
+
+    def rotate_long_axis(self, axis, angle, angle_in_radians=True):
+        op = SymmOp.from_origin_axis_angle(
+                    (0, 0, 0),
+                    axis=tuple(axis),
+                    angle=angle,
+                    angle_in_radians=angle_in_radians
+                )
+        m = op.rotation_matrix
+        centered_coords = np.zeros(self.coords_mol.shape)
+        for i in range(len(self.coords_mol)):
+            centered_coords[i] = distance(self.center_coord, self.coords_mol[i], self.cell)
+        new_coords = np.zeros(self.coords_mol.shape)
+        for idx, c in enumerate(centered_coords):
+            new_coords[idx] = np.dot(m, c.T).T
+        for i in range(len(new_coords)):
+            new_coords[i] += self.center_coord
+        return new_coords
 
 
 class FAPbI3(object):
@@ -453,6 +471,13 @@ class FAPbI3(object):
     def assigh_oct_to_mesh(self):
         for oct in self.octahedra:
             oct.set_mesh_point(self.mesh)
+
+    def rotate_moleculelongaxis_by_idx(self, idx_mol, axis, angle):
+        new_coords = self.molecules[idx_mol].rotate_long_axis(axis, angle)
+        for i in range(len(new_coords)):
+            idx_atom = self.molecules[idx_mol].indices_mol[i]
+            self.molecules[idx_mol].coords_mol[i] = new_coords[i]
+            self.cubic["coords"][0][idx_atom] = new_coords[i]
 
     def extract_mol_from_indices(self, indices_molecules):
         cell = self.cell
@@ -716,134 +741,6 @@ if __name__ == "__main__":
     cubic.extract_octahedron()
     cubic.assigh_oct_to_mesh()
     
-        
-    # f = open("pbi_vectors_caxis.dat", "w")
-    # for oct in cubic.octahedra:
-    #     f.write("%f %f\n"%(math.degrees(oct.theta_PbI_vectors[0]), math.degrees(oct.phi_PbI_vectors[0])))
-    #     f.write("%f %f\n"%(math.degrees(oct.theta_PbI_vectors[1]), math.degrees(oct.phi_PbI_vectors[1])))
-    #     f.write("%f %f\n"%(math.degrees(oct.theta_PbI_vectors[2]), math.degrees(oct.phi_PbI_vectors[2])))
-    #     f.write("%f %f\n"%(math.degrees(oct.theta_PbI_vectors[3]), math.degrees(oct.phi_PbI_vectors[3])))
-    #     f.write("%f %f\n"%(math.degrees(oct.theta_PbI_vectors[4]), math.degrees(oct.phi_PbI_vectors[4])))
-    #     f.write("%f %f\n"%(math.degrees(oct.theta_PbI_vectors[5]), math.degrees(oct.phi_PbI_vectors[5])))
-    #     f.write("\n")
-    # f.close()
-    # f = open("ii_vectors_caxis.dat", "w")
-    # for oct in cubic.octahedra:
-    #     f.write("%f %f\n"%(math.degrees(oct.theta_II_vectors[0]), math.degrees(oct.phi_II_vectors[0])))
-    #     f.write("%f %f\n"%(math.degrees(oct.theta_II_vectors[1]), math.degrees(oct.phi_II_vectors[1])))
-    #     f.write("%f %f\n"%(math.degrees(oct.theta_II_vectors[2]), math.degrees(oct.phi_II_vectors[2])))
-    #     f.write("\n")
-    # f.close()
-    
-    # print(cubic.cell)
-    
-
-    
-    '''
-            self.data = {}
-            self.data['atom_numbs'] = []
-            self.data['atom_names'] = []
-            self.data['atom_types'] = []
-            self.data['orig'] = np.array([0, 0, 0])
-            self.data['cells'] = []
-            self.data['coords'] = []
-    '''
-    
 
 
-    '''
-    # get frame order parameter
-    if sys.argv[2] == '0':
-        indices_oct, nvec_oct, coords_oct = extract_octahedron(coords_I, list_I, coords_Pb, list_Pb, cubic)
-        mesh_Pb = convert_coord_to_mesh(coords_Pb, cell, num_x = 8, num_y = 8, num_z = 8)
-        for i in range(len(indices_oct)):
-            print(indices_oct[i], mesh_Pb[i])
-    else:
-        foctmap = open("octmap.dat", "r")
-        lines = foctmap.readlines()
-        foctmap.close()
-        indices_oct = []
-        mesh_Pb = []
-        for line in lines:
-            if not "[" in line:
-                continue
-            lc = line.split()
-            indices = []
-            for i in range(len(lc)):
-                c = lc.pop(0)
-                if "[" in c:
-                    indices.append(int(c.strip("[")))
-                else:
-                    if "]" in c:
-                        indices.append(int(c.strip("]")))
-                        break
-                    else:
-                        indices.append(int(c))
-            indices_oct.append(indices)
-            mesh = []
-            for i in range(len(lc)):
-                c = lc.pop(0)
-                if "[" in c:
-                    mesh.append(float(c.strip("[")))
-                else:
-                    if "]" in c:
-                        mesh.append(float(c.strip("]")))
-                        break
-                    else:
-                        mesh.append(float(c))
-            mesh_Pb.append(mesh)
-        nvec_oct = calnvec_oct(indices_oct, cubic)
-        #corr = frame_order_parameter_by_mesh(np.array(mesh_Pb), nvec_oct, cell)
-        #print(corr)
-        average_phi = afd_order_parameter(np.array(mesh_Pb), nvec_oct, cell)
-        print(average_phi)
-    '''
-
-    '''
-    # get FA orientation order parameter
-    if sys.argv[2] == '0':
-        indices_mol, nvec_mol, coords_mol = extract_mol(coords_C, list_C, coords_N, list_N, coords_H, list_H, cubic_6types)
-    
-        mesh_C = convert_coord_to_mesh(coords_C, cell, num_x = 8, num_y = 8, num_z = 8)
-        #fmolmap = open("molmap.dat", "w")
-        #for i in range(len(indices_mol)):
-        #    fmolmap.write(indices_mol[i], mesh_C[i])
-        #fmolmap.close()
-        for i in range(len(indices_mol)):
-            print(indices_mol[i], mesh_C[i])
-    else:
-        fmolmap = open("molmap.dat", "r")
-        lines = fmolmap.readlines()
-        fmolmap.close()
-        indices_mol = []
-        mesh_C = []
-        for line in lines:
-            lc = line.split()
-            indices = []
-            for i in range(len(lc)):
-                c = lc.pop(0)
-                if "[" in c:
-                    indices.append(int(c.strip("[")))
-                else:
-                    if "]" in c:
-                        indices.append(int(c.strip("]")))
-                        break
-                    else:
-                        indices.append(int(c))
-            indices_mol.append(indices)
-            mesh = []
-            for i in range(len(lc)):
-                c = lc.pop(0)
-                if "[" in c:
-                    mesh.append(float(c.strip("[")))
-                else:
-                    if "]" in c:
-                        mesh.append(float(c.strip("]")))
-                        break
-                    else:
-                        mesh.append(float(c))
-            mesh_C.append(mesh)
-        nvec_mol = calnvec_mol(indices_mol, cubic)
-        corr = molecular_order_parameter_by_mesh(np.array(mesh_C), nvec_mol, cell)
-        print(corr)
-    '''
+ 
