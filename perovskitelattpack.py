@@ -262,9 +262,9 @@ class Mesh(object):
         c_list = coord[np.newaxis,:]
         for c in c_list:
             icoord = phys2Inter(c, self.cell)
-            x = int(icoord[0]+0.5)
-            y = int(icoord[1]+0.5)
-            z = int(icoord[2]+0.5)
+            x = int(icoord[0])
+            y = int(icoord[1])
+            z = int(icoord[2])
             x,y,z = self._pbc_mesh_coord(x,y,z)
             mesh_point_list.append(self.mesh[x][y][z])
         return mesh_point_list, c_list
