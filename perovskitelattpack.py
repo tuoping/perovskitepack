@@ -235,25 +235,12 @@ class Mesh(object):
         self.supercell = cell
         
     def _pbc_mesh_coord(self, x, y, z):
-        assert x >= -1 and x <= self.mesh_size[0], print("x:", x, "mesh_size:", self.mesh_size[0])
-        assert y >= -1 and y <= self.mesh_size[1], print("y:", y, "mesh_size:", self.mesh_size[1])
-        assert z >= -1 and z <= self.mesh_size[2], print("z:", z, "mesh_size:", self.mesh_size[2])
-        if x == self.mesh_size[0]:
-            x = 0
-        if y == self.mesh_size[1]:
-            y = 0
-        if z == self.mesh_size[2]:
-            z = 0
-        if x == -1:
-            x = self.mesh_size[0]-1
-        if y == -1:
-            y = self.mesh_size[1]-1
-        if z == -1:
-            z = self.mesh_size[2]-1
+        x = (x+self.mesh_size[0])%self.mesh_size[0]
+        y = (y+self.mesh_size[1])%self.mesh_size[1]
+        z = (z+self.mesh_size[2])%self.mesh_size[2]
         return x,y,z
 
     def get_mesh_point(self, _x, _y, _z):
-        print("mesh_point: ", _x, _y, _z)
         x,y,z = self._pbc_mesh_coord(_x,_y,_z)
         return self.mesh[x][y][z]
         
@@ -265,39 +252,53 @@ class Mesh(object):
             x = int(icoord[0])
             y = int(icoord[1])
             z = int(icoord[2])
-            x,y,z = self._pbc_mesh_coord(x,y,z)
-            mesh_point_list.append(self.mesh[x][y][z])
+            _x,_y,_z = self._pbc_mesh_coord(x,y,z)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x+1,y,z)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x,y+1,z)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x,y,z+1)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x-1,y,z)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x,y-1,z)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x,y,z-1)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x+1,y+1,z)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x,y+1,z+1)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x+1,y,z+1)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x-1,y-1,z)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x,y-1,z-1)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x-1,y,z-1)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x-1,y-1,z-1)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
+            _x,_y,_z = self._pbc_mesh_coord(x+1,y+1,z+1)
+            mesh_point_list.append(self.mesh[_x][_y][_z])
         return mesh_point_list, c_list
 
     def map_obj_mesh(self, obj):
         for i in range(len(obj)):
             c = obj[i].center_coord
             mesh_point_list, c_list = self.map_coord_mesh(c)
-            for idx, mesh_point in enumerate(mesh_point_list):
-                Succeed = mesh_point.set_obj(obj[i], c_list[idx])
+            for idx_c in range(len(c_list)):
+                for idx_mesh, mesh_point in enumerate(mesh_point_list):
+                    Succeed = mesh_point.set_obj(obj[i], c_list[idx_c])
+                    if Succeed:
+                        break
                 if Succeed:
                     break
             if not Succeed:
                 return False
         return True
 
-    '''
-    def map_obj_mesh_order(self, obj):
-        centers = [obj[i].center_coord for i in range(len(obj))]
-        index_sortby_x = np.argsort(centers, axis=0)
-        index_sortby_y = np.argsort(centers, axis=1)
-        index_sortby_z = np.argsort(centers, axis=2)
-        m = 0
-        for i in range(self.mesh_size[0]):
-
-            for j in range(self.mesh_size[1]):
-                for k in range(self.mesh_size[2]):
-                    x = index_sortby_x[m]
-                    y = index_sortby_y[m]
-                    z = index_sortby_z[m]
-                    self.mesh[i][j][k]
-                    m += 1
-    '''
 
 class Molecule(object):
 

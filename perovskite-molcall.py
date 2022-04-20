@@ -30,6 +30,7 @@ if __name__ == "__main__":
 
     traj = dpdata.System(filename, fmt=fmt)
     for i_frame in range(0,traj.get_nframes()):
+        print("frame"+str(i_frame))
         stime = time.time()
         frm = traj[i_frame]
         cubic = FAPbI3(frm, fmt=fmt)
@@ -41,29 +42,42 @@ if __name__ == "__main__":
         cubic.setcutoff_I_Pb(5.0)
         cubic.setcutoff_CN_H(1.6)
     
-        etime = time.time()
-        print(etime-stime)
-        stime = etime
         cubic.extract_mol_from_indices(indices_mol)
-        # cubic.extract_mol()
+        # indices_mol = cubic.extract_mol()
         # np.save("indices_mol.npy", indices_mol)
-        etime = time.time()
-        print(etime-stime)
-        stime = etime
-        
-        # cubic.extract_octahedron()
         
         # start a mesh
+        ### map molecules to mesh
         mesh_dim = [30,30,2]
         cubic.startmesh(mesh_dim, eps=2.0) 
-        ### map molecules to mesh
         Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
         if not Succeed:
-            raise Exception("mapping failed")
-        etime = time.time()
-        print(etime-stime)
-        stime = etime
-        
+            cubic.startmesh(mesh_dim, eps=-1.0) 
+            Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+            if not Succeed:
+                cubic.startmesh(mesh_dim, eps=-1.5) 
+                Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+                if not Succeed:
+                    cubic.startmesh(mesh_dim, eps=1.5) 
+                    Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+                    if not Succeed:
+                        cubic.startmesh(mesh_dim, eps=1.0) 
+                        Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+                        if not Succeed:
+                            cubic.startmesh(mesh_dim, eps=-2.0) 
+                            Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+                            if not Succeed:
+                                cubic.startmesh(mesh_dim, eps=-2.5) 
+                                Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+                                if not Succeed:
+                                    cubic.startmesh(mesh_dim, eps=2.5) 
+                                    Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+                                    if not Succeed:
+                                        cubic.startmesh(mesh_dim, eps=2.0) 
+                                        Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+                                        if not Succeed:
+                                            raise Exception("mapping failed")
+        '''
         ### Output format.dump
         phi_list = np.load("phi_list_frame"+str(i_frame)+".npy")
     
@@ -114,4 +128,3 @@ if __name__ == "__main__":
         etime = time.time()
         print(etime-stime)
         stime = etime
-        '''
