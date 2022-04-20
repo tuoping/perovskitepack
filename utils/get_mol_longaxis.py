@@ -11,7 +11,7 @@ ref_axis = np.eye(3)
 axis = np.eye(3)
 print(axis)
 
-f1 = "mol_center_coords"
+f1 = "mol_center_coords_frame0"
 
 coord = np.loadtxt(f1, skiprows=0)
 coord = coord.T
@@ -21,10 +21,10 @@ x = np.array(coord[(caxis+1)%3])
 y = np.array(coord[(caxis+2)%3])
 z = np.array(coord[caxis])
 # phi_list_all = []
-for i_frame in range(1):
+for i_frame in range(11):
 
     Totaltime = 100
-    Num_mol = 1800
+    Num_mol = 800
     _data = np.loadtxt(dirname+"/mol_longaxis_frame"+str(i_frame), skiprows=0)
     data = _data
     data = np.reshape(data, [-1, Num_mol, 3])
@@ -55,8 +55,8 @@ for i_frame in range(1):
     for m in range(Totaltime):
         idx = 0
         data_xy = [[],[]]
-        for i in range(30):
-            for j in range(30):
+        for i in range(20):
+            for j in range(20):
                 for k in range(2):
                     # if data[m][idx][np.argmax(np.abs(data[m][idx]))] <0:
                     #     data[m][idx] = -data[m][idx]
