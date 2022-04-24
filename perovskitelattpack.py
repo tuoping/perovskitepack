@@ -426,7 +426,7 @@ class FAPbI3(object):
         self.types["Pb"] = self.cubic["atom_names"].index("Pb")
         assert self.cubic.get_nframes() == 1, print(self.cubic.get_nframes())
 
-    def _from_obj(self, filename, fmt):
+    def _from_obj(self, filename, fmt="vasp/poscar"):
         self.cubic = filename
         if fmt == "lammps/lmp":
             self.cubic["atom_names"][0] = "I"
@@ -581,11 +581,43 @@ class FAPbI3(object):
         assert(len(self.cubic_6types["coords"][0]) == sum(self.cubic_6types["atom_numbs"]))
         return indices_molecules
 
+    def substitute_mol_by_idx(self,idx, new_atom_name="Cs"):
+        coord = self.molecules[idx].center_coord
+        new_FAPbI3 = self.remove_mol(idx)
+        if new_atom_name in new_FAPbI3.cubic["atom_names"]:
+            new_FAPbI3.cubic["atom_numbs"][list(new_FAPbI3.cubic["atom_names"]).index(new_atom_name)] += 1
+            new_FAPbI3.cubic.data["atom_types"] = np.append(new_FAPbI3.cubic["atom_types"], list(new_FAPbI3.cubic["atom_names"]).index(new_atom_name))
+            new_FAPbI3.cubic.data["coords"] = np.vstack((new_FAPbI3.cubic["coords"][0], np.array([coord])))[np.newaxis, :]
+        else:
+            new_FAPbI3.cubic.add_atom_names([new_atom_name])
+            new_FAPbI3.cubic["atom_numbs"][-1] = 1
+            new_FAPbI3.cubic.data["atom_types"] = np.append(new_FAPbI3.cubic["atom_types"], list(new_FAPbI3.cubic["atom_names"]).index(new_atom_name))
+            new_FAPbI3.cubic.data["coords"] = np.vstack((new_FAPbI3.cubic["coords"][0], np.array([coord])))[np.newaxis, :]
+        return new_FAPbI3
+
     def remove_mol(self, idx):
         removed_atom_idx = self.molecules[idx].indices_mol
+        molecules = deepcopy(self.molecules)
+        for i_mol, mol in enumerate(molecules):
+            if i_mol == idx:
+                continue
+            for ridx in removed_atom_idx:
+                mol.indices_mol = [idx-1 if idx > ridx else idx for idx in mol.indices_mol]
         picked_atom_idx = np.delete(np.arange(sum(self.cubic["atom_numbs"])), removed_atom_idx)
         new_sys = self.cubic.pick_atom_idx(picked_atom_idx)
-        return new_sys
+
+        new_molecules = molecules
+        new_molecules.pop(idx)
+
+        new_FAPbI3 = self.copy()
+        new_FAPbI3.cubic = new_sys
+        new_FAPbI3.molecules = new_molecules
+        return new_FAPbI3
+
+    def copy(self):
+        """Returns a copy of the system.  """
+        return self.__class__(deepcopy(self.cubic))
+
 
     def setcutoff_I_Pb(self, cutoff = 3.5):
         self.cutoff_I_Pb = cutoff
