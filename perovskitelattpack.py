@@ -602,7 +602,7 @@ class FAPbI3(object):
         for i_mol, mol in enumerate(molecules):
             if i_mol == idx:
                 continue
-            for ridx in removed_atom_idx:
+            for ridx in sorted(removed_atom_idx, reverse=True):
                 mol.indices_mol = [idx-1 if idx > ridx else idx for idx in mol.indices_mol]
         picked_atom_idx = np.delete(np.arange(sum(self.cubic["atom_numbs"])), removed_atom_idx)
         new_sys = self.cubic.pick_atom_idx(picked_atom_idx)
