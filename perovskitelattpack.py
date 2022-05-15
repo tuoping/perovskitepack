@@ -246,7 +246,7 @@ class Mesh(object):
         
     def map_coord_mesh(self, coord):
         mesh_point_list = []
-        c_list = coord[np.newaxis,:]
+        c_list = coord[np.newaxis,:]+self.eps
         for c in c_list:
             icoord = phys2Inter(c, self.cell)
             x = int(icoord[0])
@@ -732,20 +732,20 @@ class FAPbI3(object):
 
 if __name__ == "__main__":
     filename = sys.argv[1]
-    #cubic = dpdata.System(filename, "vasp/poscar")
-    # type_C = cubic["atom_names"].index("C")
-    # type_N = cubic["atom_names"].index("N")
-    # type_H = cubic["atom_names"].index("H")
-    # type_I = cubic["atom_names"].index("I")
-    # type_Pb = cubic["atom_names"].index("Pb")
+    # import cubic perovskite
     if filename.endswith(".lmp"):
         fmt = "lammps/lmp"
     else:
-        if filename.endswith(".lammpstrj"):
+        if filename.endswith(".lammpstrj") or filename.endswith(".dump"):
             fmt = "lammps/dump"
         else:
-            raise Exception("Unknown file format")
+            if filename.endswith(".vasp") or filename.endswith("POSCAR") or filename.endswith("CONTCAR"):
+                fmt = "vasp/poscar"
+            else:
+                raise Exception("Unknown file format")
     cubic = FAPbI3(filename, fmt=fmt)
+    
+    # set axis according to "caxis"
     caxis = int(np.loadtxt("caxis"))
     ref_axis = np.eye(3)
     axis = np.eye(3)
@@ -753,12 +753,16 @@ if __name__ == "__main__":
     axis[0]=ref_axis[(caxis+1)%3]
     axis[1]=np.cross(axis[0], axis[2])
     cubic.set_axis(axis)
-    cubic.setcutoff_I_Pb(4.0)
-    # print(cubic.axis)
-    cubic.startmesh([8,8,8]) 
-    '''
-    cubic.extract_mol()
+    
+    # set cutoff of bonds
+    cubic.setcutoff_I_Pb(5.0)
+    cubic.setcutoff_CN_H(1.6)
 
+    # start a mesh
+    mesh_dim = [8,8,8]
+    cubic.startmesh(mesh_dim, eps=0.0) 
+    
+    cubic.extract_mol()
     f = open("molecule_longaxis.dat", "w")
     for mol in cubic.molecules:
         f.write("%f %f %f\n"%(math.degrees(mol.angle_longaxis[0]), math.degrees(mol.angle_longaxis[1]), math.degrees(mol.angle_longaxis[2])))
@@ -768,12 +772,4 @@ if __name__ == "__main__":
     for mol in cubic.molecules:
         f.write("%f %f %f\n"%(math.degrees(mol.angle_polaraxis[0]), math.degrees(mol.angle_polaraxis[1]), math.degrees(mol.angle_polaraxis[2])))
     f.close()
-    '''
-    # cubic.assigh_molecule_to_mesh()
     
-    cubic.extract_octahedron()
-    cubic.assigh_oct_to_mesh()
-    
-
-
- 
