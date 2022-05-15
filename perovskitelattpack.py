@@ -1,4 +1,5 @@
 from copy import deepcopy
+from token import TYPE_COMMENT
 import dpdata
 from dpdata.lammps.lmp import box2lmpbox
 from pymatgen.core.operations import SymmOp
@@ -363,7 +364,7 @@ class Molecule(object):
 
 class FAPbI3(object):
 
-    def __init__(self, filename, fmt="lammps/dump"):
+    def __init__(self, filename, fmt="lammps/dump", type_map=["I","Pb","C","N","H"]):
         self.setcutoff_CN_H()
         self.setcutoff_I_Pb()
         self.mols = []
@@ -373,24 +374,16 @@ class FAPbI3(object):
         self.indices_elem = {}
         
         if isinstance(filename, str):
-            self._from_file(filename, fmt)
+            self._from_file(filename, fmt, type_map)
         else:
-            self._from_obj(filename, fmt)
+            self._from_obj(filename, type_map, fmt)
     
         self.cell = np.array(self.cubic["cells"][0])
         #invcell = np.linalg.inv(cell)
         #dcoord = np.matmul(coord, invcell)
-        
-        self.indices_elem["C"]= np.where(self.cubic["atom_types"]==self.types["C"])
-        self.indices_elem["N"]= np.where(self.cubic["atom_types"]==self.types["N"])
-        self.indices_elem["H"]= np.where(self.cubic["atom_types"]==self.types["H"])
-        self.indices_elem["I"]= np.where(self.cubic["atom_types"]==self.types["I"])
-        self.indices_elem["Pb"] =np.where(self.cubic["atom_types"]==self.types["Pb"])
-        self.coords["N"] = self.cubic["coords"][0][self.indices_elem["N"][0]]
-        self.coords["C"] = self.cubic["coords"][0][self.indices_elem["C"][0]]
-        self.coords["H"] = self.cubic["coords"][0][self.indices_elem["H"][0]]
-        self.coords["I"] = self.cubic["coords"][0][self.indices_elem["I"][0]]
-        self.coords["Pb"] =self.cubic["coords"][0][self.indices_elem["Pb"][0]]
+        for elem_type in type_map:
+            self.indices_elem[elem_type]= np.where(self.cubic["atom_types"]==self.types[elem_type])
+            self.coords[elem_type] = self.cubic["coords"][0][self.indices_elem[elem_type][0]]
         
         self.cubic_6types = deepcopy(self.cubic)
         self.cubic_6types["atom_names"].append("Ha")
@@ -399,59 +392,41 @@ class FAPbI3(object):
         self.types_6types["Ha"] = 5
         self.set_axis()
 
-    def _from_file(self, filename, fmt):
+    def _from_file(self, filename, fmt, type_map):
         if fmt == "lammps/lmp":
             self.cubic = dpdata.System(filename, "lammps/lmp")
-            self.cubic["atom_names"][0] = "I"
-            self.cubic["atom_names"][1] = "Pb"
-            self.cubic["atom_names"][2] = "C"
-            self.cubic["atom_names"][3] = "N"
-            self.cubic["atom_names"][4] = "H"   
+            for idx,elem_type in enumerate(type_map):
+                self.cubic["atom_names"][idx] = elem_type
         else:
             if fmt == "lammps/dump":
                 self.cubic = dpdata.System(filename, "lammps/dump")
-                self.cubic["atom_names"][0] = "I"
-                self.cubic["atom_names"][1] = "Pb"
-                self.cubic["atom_names"][2] = "C"
-                self.cubic["atom_names"][3] = "N"
-                self.cubic["atom_names"][4] = "H"      
+                for idx,elem_type in enumerate(type_map):
+                    self.cubic["atom_names"][idx] = elem_type    
             else:
                 if fmt == "vasp/poscar":
                     self.cubic = dpdata.System(filename, "vasp/poscar")
                 else:
                     raise Exception("Unknown format")
-        self.types["C"] =  self.cubic["atom_names"].index("C")
-        self.types["N"] =  self.cubic["atom_names"].index("N")
-        self.types["H"] =  self.cubic["atom_names"].index("H")
-        self.types["I"] =  self.cubic["atom_names"].index("I")
-        self.types["Pb"] = self.cubic["atom_names"].index("Pb")
+        for elem_type in type_map:
+            self.types[elem_type] =  self.cubic["atom_names"].index(elem_type)
         assert self.cubic.get_nframes() == 1, print(self.cubic.get_nframes())
 
-    def _from_obj(self, filename, fmt="vasp/poscar"):
+    def _from_obj(self, filename, type_map, fmt="vasp/poscar"):
         self.cubic = filename
         if fmt == "lammps/lmp":
-            self.cubic["atom_names"][0] = "I"
-            self.cubic["atom_names"][1] = "Pb"
-            self.cubic["atom_names"][2] = "C"
-            self.cubic["atom_names"][3] = "N"
-            self.cubic["atom_names"][4] = "H"
+            for idx,elem_type in enumerate(type_map):
+                self.cubic["atom_names"][idx] = elem_type
         else:
             if fmt == "lammps/dump":
-                self.cubic["atom_names"][0] = "I"
-                self.cubic["atom_names"][1] = "Pb"
-                self.cubic["atom_names"][2] = "C"
-                self.cubic["atom_names"][3] = "N"
-                self.cubic["atom_names"][4] = "H"   
+                for idx,elem_type in enumerate(type_map):
+                    self.cubic["atom_names"][idx] = elem_type
             else:
                 if fmt == "vasp/poscar":
                     pass
                 else:
                     raise Exception("Unknown format")
-        self.types["C"] =  self.cubic["atom_names"].index("C")
-        self.types["N"] =  self.cubic["atom_names"].index("N")
-        self.types["H"] =  self.cubic["atom_names"].index("H")
-        self.types["I"] =  self.cubic["atom_names"].index("I")
-        self.types["Pb"] = self.cubic["atom_names"].index("Pb")
+        for elem_type in type_map:
+            self.types[elem_type] =  self.cubic["atom_names"].index(elem_type)
         assert self.cubic.get_nframes() == 1, print(self.cubic.get_nframes())
 
 
@@ -480,30 +455,48 @@ class FAPbI3(object):
             self.molecules[idx_mol].coords_mol[i] = new_coords[i]
             self.cubic["coords"][0][idx_atom] = new_coords[i]
 
-    def extract_mol_from_indices(self, indices_molecules):
+    def extract_mol_from_indices(self, indices_molecules, moltype="FA"):
         cell = self.cell
 
         self.molecules = []
         for indices in indices_molecules:
-            coords = self.cubic["coords"][0][indices]
-            vecNN = distance(coords[1], coords[2], cell)
-            dNN = np.linalg.norm(vecNN)
-            nvecNN = vecNN/dNN
+            if moltype == "FA":
+                coords = self.cubic["coords"][0][indices]
+                vecNN = distance(coords[1], coords[2], cell)
+                dNN = np.linalg.norm(vecNN)
+                nvecNN = vecNN/dNN
 
-            cNN = center(coords[1], coords[2], cell)
-            vecCN = distance(coords[0], cNN, cell)
-            dCN = np.linalg.norm(vecCN)
-            nvecCN = vecCN/dCN
-            
-            molecule = Molecule(indices, coords, cell)
-            molecule.set_longaxis(nvecNN, dNN)
-            molecule.set_polaraxis(nvecCN, dCN)
-            molecule.angle_longaxis(self.axis)
-            molecule.angle_polaraxis(self.axis)
-            self.molecules.append(molecule)
+                cNN = center(coords[1], coords[2], cell)
+                vecCN = distance(coords[0], cNN, cell)
+                dCN = np.linalg.norm(vecCN)
+                nvecCN = vecCN/dCN
+
+                molecule = Molecule(indices, coords, cell)
+                molecule.set_longaxis(nvecNN, dNN)
+                molecule.set_polaraxis(nvecCN, dCN)
+                molecule.angle_longaxis(self.axis)
+                molecule.angle_polaraxis(self.axis)
+                self.molecules.append(molecule)
+            elif moltype == "MA":
+                coords = self.cubic["coords"][0][indices]
+                vecCN = distance(coords[0], coords[1], cell)
+                dCN = np.linalg.norm(vecCN)
+                nvecCN = vecCN/dCN
+
+                cCN = center(coords[0], coords[1], cell)
+
+                molecule = Molecule(indices, coords, cell)
+                #molecule.set_longaxis(nvecNN, dNN)
+                molecule.set_polaraxis(nvecCN, dCN)
+                #molecule.angle_longaxis(self.axis)
+                molecule.angle_polaraxis(self.axis)
+                molecule.set_center_postion(cCN)
+                self.molecules.append(molecule)
+            else:
+                raise Exception("Unknown molecule type")
 
 
-    def extract_mol(self, indices_molecules = None):
+    def extract_mol(self, indices_molecules = None, moltype="FA"):
         if indices_molecules is not None:
             self.extract_mol_from_indices(indices_molecules)
             return indices_molecules
@@ -519,67 +512,137 @@ class FAPbI3(object):
         idx = 0
         self.molecules = []
         indices_molecules = []
-        for idx_C,C in enumerate(coords_C):
-            # stime = time.time()
-            indices = []
-            indices.append(list_C[0][idx_C])
-            coords = []
-            coords.append(C)
-            for idx_N,N in enumerate(coords_N):
-                if len(indices) == 3:
-                    break
-                d = np.linalg.norm(distance(N, C, cell))
-                if d < self.cutoff_CN_H:
-                    coords.append(N)
-                    indices.append(list_N[0][idx_N])
-            # Find Ha: H atoms bonded to C
-            for idx_H,H in enumerate(coords_H):
-                if len(indices) == 4:
-                    break
-                d = np.linalg.norm(distance(H, C, cell))
-                if d < self.cutoff_CN_H:
-                    coords.append(H)
-                    indices.append(list_H[0][idx_H])
-                    self.cubic_6types["atom_types"][indices[-1]] = self.types_6types["Ha"]
-                    self.cubic_6types["atom_numbs"][self.types_6types["H"]] -= 1
-                    self.cubic_6types["atom_numbs"][self.types_6types["Ha"]] += 1
-            # Find H atoms bonded to N
-            for idx_N in indices[1:3]:
-                N = self.cubic["coords"][0][idx_N]
-                if len(indices) == 8:
-                    break
+        if moltype == "FA":
+            for idx_C,C in enumerate(coords_C):
+                # stime = time.time()
+                indices = []
+                indices.append(list_C[0][idx_C])
+                coords = []
+                coords.append(C)
+                for idx_N,N in enumerate(coords_N):
+                    if len(indices) == 3:
+                        break
+                    d = np.linalg.norm(distance(N, C, cell))
+                    if d < self.cutoff_CN_H:
+                        coords.append(N)
+                        indices.append(list_N[0][idx_N])
+                # Find Ha: H atoms bonded to C
                 for idx_H,H in enumerate(coords_H):
-                    d = np.linalg.norm(distance(H, N, cell))
+                    if len(indices) == 4:
+                        break
+                    d = np.linalg.norm(distance(H, C, cell))
                     if d < self.cutoff_CN_H:
                         coords.append(H)
                         indices.append(list_H[0][idx_H])
-        
-            idx += 1
-            # etime = time.time()
-            # print("find molecule: ", etime-stime)
-            # stime = etime
-            assert len(indices) == 8, print(np.array(indices)+1) 
-            
-            vecNN = distance(coords[1], coords[2], cell)
-            dNN = np.linalg.norm(vecNN)
-            nvecNN = vecNN/dNN
+                        self.cubic_6types["atom_types"][indices[-1]] = self.types_6types["Ha"]
+                        self.cubic_6types["atom_numbs"][self.types_6types["H"]] -= 1
+                        self.cubic_6types["atom_numbs"][self.types_6types["Ha"]] += 1
+                # Find H atoms bonded to N
+                for idx_N in indices[1:3]:
+                    N = self.cubic["coords"][0][idx_N]
+                    if len(indices) == 8:
+                        break
+                    for idx_H,H in enumerate(coords_H):
+                        d = np.linalg.norm(distance(H, N, cell))
+                        if d < self.cutoff_CN_H:
+                            coords.append(H)
+                            indices.append(list_H[0][idx_H])
 
-            cNN = center(coords[1], coords[2], cell)
-            vecCN = distance(coords[0], cNN, cell)
-            dCN = np.linalg.norm(vecCN)
-            nvecCN = vecCN/dCN
-            
-            molecule = Molecule(indices, coords, cell)
-            molecule.set_longaxis(nvecNN, dNN)
-            molecule.set_polaraxis(nvecCN, dCN)
-            molecule.angle_longaxis(self.axis)
-            molecule.angle_polaraxis(self.axis)
-            self.molecules.append(molecule)
-            # etime = time.time()
-            # print("calculate vector: ", etime-stime)
-            # stime = etime
-            indices_molecules.append(indices)       
-        assert(len(self.cubic_6types["coords"][0]) == sum(self.cubic_6types["atom_numbs"]))
+                idx += 1
+                # etime = time.time()
+                # print("find molecule: ", etime-stime)
+                # stime = etime
+                assert len(indices) == 8, print(np.array(indices)+1) 
+
+                vecNN = distance(coords[1], coords[2], cell)
+                dNN = np.linalg.norm(vecNN)
+                nvecNN = vecNN/dNN
+
+                cNN = center(coords[1], coords[2], cell)
+                vecCN = distance(coords[0], cNN, cell)
+                dCN = np.linalg.norm(vecCN)
+                nvecCN = vecCN/dCN
+
+                molecule = Molecule(indices, coords, cell)
+                molecule.set_longaxis(nvecNN, dNN)
+                molecule.set_polaraxis(nvecCN, dCN)
+                molecule.angle_longaxis(self.axis)
+                molecule.angle_polaraxis(self.axis)
+                self.molecules.append(molecule)
+                # etime = time.time()
+                # print("calculate vector: ", etime-stime)
+                # stime = etime
+                indices_molecules.append(indices)       
+            assert(len(self.cubic_6types["coords"][0]) == sum(self.cubic_6types["atom_numbs"]))
+        elif moltype == "MA":
+            for idx_C,C in enumerate(coords_C):
+                # stime = time.time()
+                indices = []
+                indices.append(list_C[0][idx_C])
+                coords = []
+                coords.append(C)
+                for idx_N,N in enumerate(coords_N):
+                    if len(indices) == 2:
+                        break
+                    d = np.linalg.norm(distance(N, C, cell))
+                    if d < self.cutoff_CN_H:
+                        coords.append(N)
+                        indices.append(list_N[0][idx_N])
+                assert len(indices) == 2, print("C+N:", np.array(indices)+1) 
+                # Find Ha: H atoms bonded to C
+                for idx_H,H in enumerate(coords_H):
+                    if len(indices) == 5:
+                        break
+                    d = np.linalg.norm(distance(H, C, cell))
+                    if d < self.cutoff_CN_H:
+                        coords.append(H)
+                        indices.append(list_H[0][idx_H])
+                        self.cubic_6types["atom_types"][indices[-1]] = self.types_6types["Ha"]
+                        self.cubic_6types["atom_numbs"][self.types_6types["H"]] -= 1
+                        self.cubic_6types["atom_numbs"][self.types_6types["Ha"]] += 1
+                assert len(indices) == 5, print("C+N+Ha:", np.array(indices)+1) 
+                # Find H atoms bonded to N
+                for idx_N in indices[1:2]:
+                    N = self.cubic["coords"][0][idx_N]
+                    if len(indices) == 8:
+                        break
+                    for idx_H,H in enumerate(coords_H):
+                        if len(indices) == 8:
+                            break
+                        d = np.linalg.norm(distance(H, N, cell))
+                        if d < self.cutoff_CN_H:
+                            coords.append(H)
+                            indices.append(list_H[0][idx_H])
+
+                idx += 1
+                # etime = time.time()
+                # print("find molecule: ", etime-stime)
+                # stime = etime
+                assert len(indices) == 8, print(np.array(indices)+1) 
+
+                #vecNN = distance(coords[1], coords[2], cell)
+                #dNN = np.linalg.norm(vecNN)
+                #nvecNN = vecNN/dNN
+                vecCN = distance(coords[0], coords[1], cell)
+                dCN = np.linalg.norm(vecCN)
+                nvecCN = vecCN/dCN
+
+                cCN = center(coords[0], coords[1], cell)
+
+                molecule = Molecule(indices, coords, cell)
+                #molecule.set_longaxis(nvecNN, dNN)
+                molecule.set_polaraxis(nvecCN, dCN)
+                #molecule.angle_longaxis(self.axis)
+                molecule.angle_polaraxis(self.axis)
+                molecule.set_center_postion(cCN)
+                self.molecules.append(molecule)
+                # etime = time.time()
+                # print("calculate vector: ", etime-stime)
+                # stime = etime
+                indices_molecules.append(indices)       
+            assert(len(self.cubic_6types["coords"][0]) == sum(self.cubic_6types["atom_numbs"]))
+        else:
+            raise Exception("Unknown moltype")
         return indices_molecules
 
     def substitute_mol_by_idx(self,idx, new_atom_name="Cs"):
