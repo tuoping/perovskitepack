@@ -659,6 +659,21 @@ class FAPbI3(object):
             new_FAPbI3.cubic.data["coords"] = np.vstack((new_FAPbI3.cubic["coords"][0], np.array([coord])))[np.newaxis, :]
         return new_FAPbI3
 
+    def add_atom(self, atom_name, atom_coord):
+        '''
+        self.data = {}
+        self.data['atom_numbs'] = []
+        self.data['atom_names'] = []
+        self.data['atom_types'] = []
+        self.data['orig'] = np.array([0, 0, 0])
+        self.data['cells'] = []
+        self.data['coords'] = []
+        '''
+        atom_type = self.types[atom_name]
+        self.cubic.data["atom_numbs"][atom_type] += 1
+        self.cubic.data["atom_types"] = np.append(self.cubic.data["atom_types"], atom_type)
+        self.cubic.data["coords"] = np.vstack((self.cubic.data["coords"][0], np.array([atom_coord])))[np.newaxis, :]
+
     def remove_mol(self, idx):
         removed_atom_idx = self.molecules[idx].indices_mol
         molecules = deepcopy(self.molecules)
