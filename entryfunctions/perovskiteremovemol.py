@@ -43,11 +43,12 @@ if __name__ == "__main__":
         cubic.setcutoff_I_Pb(5.0)
         cubic.setcutoff_CN_H(1.6)
     
-        if i_frame == 0:
+        try:
+            indices_mol = np.load("indices_mol.npy")
+            cubic.extract_mol_from_indices(indices_mol, moltype="MA")
+        except:
             indices_mol = cubic.extract_mol(moltype = "MA")
             np.save("indices_mol.npy", indices_mol)
-        else:
-            cubic.extract_mol_from_indices(indices_mol, moltype="MA")
 
         mesh_dim = [4,4,4]
         cubic.startmesh(mesh_dim, eps=0.0) 
@@ -79,14 +80,14 @@ if __name__ == "__main__":
                                         if not Succeed:
                                             raise Exception("mapping failed")
         mesh = cubic.mesh
-        center0 = mesh.get_mesh_point(2,2,2).obj
-        center1 = mesh.get_mesh_point(3,2,2).obj
-        center2 = mesh.get_mesh_point(2,3,2).obj
-        center3 = mesh.get_mesh_point(3,3,2).obj
-        center4 = mesh.get_mesh_point(2,2,3).obj
-        center5 = mesh.get_mesh_point(3,2,3).obj
-        center6 = mesh.get_mesh_point(2,3,3).obj
-        center7 = mesh.get_mesh_point(3,3,3).obj
+        center0 = mesh.get_mesh_point(0,0,0).obj
+        center1 = mesh.get_mesh_point(0,1,0).obj
+        center2 = mesh.get_mesh_point(1,0,0).obj
+        center3 = mesh.get_mesh_point(1,1,0).obj
+        center4 = mesh.get_mesh_point(0,0,1).obj
+        center5 = mesh.get_mesh_point(0,1,1).obj
+        center6 = mesh.get_mesh_point(1,0,1).obj
+        center7 = mesh.get_mesh_point(1,1,1).obj
         molecules.append([center0, center1, center2, center3, center4, center5, center6, center7])
         # indices_mol = cubic.extract_mol()
         # np.save("indices_mol.npy", indices_mol)

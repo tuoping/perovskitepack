@@ -7,17 +7,11 @@ of1.write("T  average_135  average_45  std_135  std_45  size_domain_0 size_domai
 of2.write("T  average_short  average_long  std_short  std_long  size_domain_0 size_domain_1\n")
 of3 = open("pbpbratio.out", "w")
 of3.write("T  average_135/c  average_45/c  std_135/c  std_45/c  c\n")
-for T in [50]+[i for i in range(52,64)]+[i for i in range(65,106)]+[i for i in range(110,136,5)]+[i for i in range(136,146)]+[i for i in range(147,151)]+[i for i in range(152,155)]+[170,190,195,200,205,210,215,220,225,230,250,255,260,265,270,275,280,285,290,295,300,305,310,320,340,350,400,450]:
+for T in [i for i in range(20, 155, 5)]+[i for i in range(155, 440,10)]:
     dirname = None
-    if T >=50 & T <=155:
+    if T < 155:
         dirname = "annealT"+str(T)
-    if T in [i for i in range(170,330,20)]+[350]:
-        dirname = "1-2ns-T"+str(T)
-    if T in [195,200,205,215,220,225,295,300,305]:
-        dirname = "0-2ns-T"+str(T)
-    if T in [255,260,265,275,280,285,320,340]:
-        dirname = "0-3ns-T"+str(T)
-    if T in [400,450]:
+    else:
         dirname = "T"+str(T)
     print(dirname)
 
@@ -54,6 +48,6 @@ for T in [50]+[i for i in range(52,64)]+[i for i in range(65,106)]+[i for i in r
     # d1 = np.array([data[k][0] for k in range(len(data)) if cluster.labels_[k] == 0])
     # d2 = np.array([data[k][0] for k in range(len(data)) if cluster.labels_[k] == 1])
 
-    of1.write("%d    %10.3f %10.3f   %10.3f %10.3f   %d %d\n"%(T, average_data[0], average_data[1], std_data[0], std_data[1], size_domain[0], size_domain[1]))
-    of2.write("%d    %10.3f %10.3f   %10.3f %10.3f   %d %d\n"%(T, average_sorted_data[0], average_sorted_data[1], std_sorted_data[0], std_sorted_data[1], size_domain[0], size_domain[1]))
+    of1.write("%d    %10.3f %10.3f   %10.3f %10.3f   %d %d\n"%(T, average_data[0]/np.sqrt(2), average_data[1]/np.sqrt(2), std_data[0], std_data[1], size_domain[0], size_domain[1]))
+    of2.write("%d    %10.3f %10.3f   %10.3f %10.3f   %d %d\n"%(T, average_sorted_data[0]/np.sqrt(2), average_sorted_data[1]/np.sqrt(2), std_sorted_data[0], std_sorted_data[1], size_domain[0], size_domain[1]))
     of3.write("%d    %10.3f %10.3f   %10.3f %10.3f   %10.3f\n"%(T, average_ratio[0], average_ratio[1], std_ratio[0], std_ratio[1], average_c))

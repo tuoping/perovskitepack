@@ -13,36 +13,35 @@ def pbc_idx(idx):
         return 2
     return idx
 
-ifiles = sorted(glob.glob("traj/*.lammpstrj"), key=getorder)
+#ifiles = sorted(glob.glob("traj/*.lammpstrj"), key=getorder)
+ifiles = ["traj/"+str(i)+".lammpstrj" for i in range(1000000, 2000000, 1000)]
 of = open("cellsize.out", "w")
 of.write("step    a  b  c\n")
-of2 = open("ratio-cellsize.out", "w")
-of2.write("step   a/c/sqrt(2)\n")
+of2 = open("diag-cellsize.out", "w")
+of2.write("step    a  b  c\n")
 atot = 0.0
 btot = 0.0
 ctot = 0.0
 caxis = int(np.loadtxt("caxis"))
+# caxis = 2
+k=0
 for fname in ifiles:
     f = re.match("traj/(.*?).lammpstrj", fname)
     i = int(f[1])
     d = dpdata.System(fname, "lammps/dump")
-    x_vec = d["cells"][0][pbc_idx(caxis+1)]
-    y_vec = d["cells"][0][pbc_idx(caxis-1)]
-    a_vec = y_vec-x_vec
-    b_vec = x_vec+y_vec
-    a = np.linalg.norm(a_vec)/8.0
-    b = np.linalg.norm(b_vec)/8.0
-    c = np.linalg.norm(d["cells"][0][caxis])/8.0
-    atot += a
-    btot += b
-    ctot += c
-    of.write("%5d    %11.5f  %11.5f  %11.5f\n" % (i/1000,a,b,c))
-    # dim = sorted([a,b,c])
-    of2.write("%5d    %11.5f\n" % (i/1000,(a+b)/2/c/np.sqrt(2)))
+    for i in range(1):
+        len_a = np.linalg.norm(d["cells"][i][0])
+        len_b = np.linalg.norm(d["cells"][i][1])
+        len_c = np.linalg.norm(d["cells"][i][2])
+        x_vec = d["cells"][i][pbc_idx(caxis+1)]+d["cells"][i][pbc_idx(caxis-1)]
+        y_vec = d["cells"][i][pbc_idx(caxis+1)]-d["cells"][i][pbc_idx(caxis-1)]
+        z_vec = d["cells"][i][caxis]
+        x = np.linalg.norm(x_vec)
+        y = np.linalg.norm(y_vec)
+        z = np.linalg.norm(z_vec)
+        of.write("%5d    %11.5f  %11.5f  %11.5f\n" % (k,len_a,len_b,len_c))
+        of2.write("%5d    %11.5f  %11.5f  %11.5f\n" % (k,x,y,z))
+        k += 1
 
 of.close()
 of2.close()
-atot /= float(len(ifiles))
-btot /= float(len(ifiles))
-ctot /= float(len(ifiles))
-print(atot, btot, ctot)
