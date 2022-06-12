@@ -7,7 +7,7 @@ import sys
 # filename = sys.argv[1]
 f1 = "center_coords"
 
-coord = np.loadtxt(f1, skiprows=0)
+coord = np.loadtxt(f1, skiprows=0)[-256:]
 coord = coord.T
 
 caxis = int(np.loadtxt("caxis"))
@@ -17,9 +17,9 @@ z = np.array(coord[caxis])
 
 
 f2 = "left_distances"
-data1 = np.loadtxt(f2)
+data1 = np.loadtxt(f2)[-256:]
 f3 = "right_distances"
-data2 = np.loadtxt(f3)
+data2 = np.loadtxt(f3)[-256:]
 
 data = [data1[i]/data2[i] for i in range(len(data1))]
 # data = [int(data1[i]/data2[i] > 1) for i in range(len(data1))]
