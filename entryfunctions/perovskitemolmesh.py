@@ -26,7 +26,6 @@ if __name__ == "__main__":
     axis[2]=ref_axis[caxis]
     axis[0]=ref_axis[(caxis+1)%3]
     axis[1]=np.cross(axis[0], axis[2])
-    indices_mol = np.load("indices_mol.npy")
 
     traj = dpdata.System(filename, fmt=fmt)
     for i_frame in range(0,traj.get_nframes()):
@@ -42,13 +41,16 @@ if __name__ == "__main__":
         cubic.setcutoff_I_Pb(5.0)
         cubic.setcutoff_CN_H(1.6)
     
-        cubic.extract_mol_from_indices(indices_mol)
-        # indices_mol = cubic.extract_mol()
-        # np.save("indices_mol.npy", indices_mol)
+        try:
+            indices_mol = np.load("indices_mol.npy")
+            cubic.extract_mol_from_indices(indices_mol, moltype="MA")
+        except:
+            indices_mol = cubic.extract_mol(moltype="MA")
+            np.save("indices_mol.npy", indices_mol)
         
         # start a mesh
         ### map molecules to mesh
-        mesh_dim = [30,30,2]
+        mesh_dim = [8,8,4]
         cubic.startmesh(mesh_dim, eps=2.0) 
         Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
         if not Succeed:
@@ -101,9 +103,7 @@ if __name__ == "__main__":
         ### Output coordinates & molecule vectors
         num = cubic.mesh.mesh_size
         mesh = cubic.mesh
-        ofl = open("mol_longaxis_frame"+str(i_frame), "w")
         ofs = open("mol_shortaxis_frame"+str(i_frame), "w")
-        ofla = open("mol_longaxis_angle_frame"+str(i_frame), "w")
         ofsa = open("mol_shortaxis_angle_frame"+str(i_frame), "w")
         ofc = open("mol_center_coords_frame"+str(i_frame), "w")
        
@@ -114,15 +114,11 @@ if __name__ == "__main__":
                     # center = mesh.mesh[i][j][k]
                     ofc.write("%f %f %f\n"%(center.obj.center_coord[0], center.obj.center_coord[1], center.obj.center_coord[2]))
                     
-                    ofl.write("%f %f %f\n"%((center.obj.unitlongaxis[0], center.obj.unitlongaxis[1], center.obj.unitlongaxis[2])))
                     ofs.write("%f %f %f\n"%(center.obj.unitpolaraxis[0], center.obj.unitpolaraxis[1], center.obj.unitpolaraxis[2]))
     
-                    ofla.write("%f %f %f\n"%((math.degrees(center.obj.angle_longaxis[0]), math.degrees(center.obj.angle_longaxis[1]), math.degrees(center.obj.angle_longaxis[2]))))
                     ofsa.write("%f %f %f\n"%(math.degrees(center.obj.angle_polaraxis[0]), math.degrees(center.obj.angle_polaraxis[1]), math.degrees(center.obj.angle_polaraxis[2])))
         
-        ofl.close()
         ofs.close()
-        ofla.close()
         ofsa.close()
         ofc.close()
         etime = time.time()
