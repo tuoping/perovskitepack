@@ -66,34 +66,21 @@ if __name__ == "__main__":
                 Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
                 if not Succeed:
                     raise Exception("mapping failed")
-
-        ### Output coordinates & molecule vectors
-        num = cubic.mesh.mesh_size
+        ### Output format.dump
+        phi_list = np.load("phi_list_frame"+str(i_frame)+".npy")
+    
+        formatlist = np.zeros(cubic.cubic.get_natoms())
         mesh = cubic.mesh
-        ofl = open("mol_longaxis_frame"+str(i_frame), "w")
-        ofs = open("mol_shortaxis_frame"+str(i_frame), "w")
-        ofla = open("mol_longaxis_angle_frame"+str(i_frame), "w")
-        ofsa = open("mol_shortaxis_angle_frame"+str(i_frame), "w")
-        ofc = open("mol_center_coords_frame"+str(i_frame), "w")
-       
+        num = cubic.mesh.mesh_size
+        idx = 0
         for i in range(num[0]):
             for j in range(num[1]):
                 for k in range(num[2]):
                     center = mesh.get_mesh_point(i,j,k)
-                    # center = mesh.mesh[i][j][k]
-                    ofc.write("%f %f %f\n"%(center.obj.center_coord[0], center.obj.center_coord[1], center.obj.center_coord[2]))
-                    
-                    ofl.write("%f %f %f\n"%((center.obj.unitlongaxis[0], center.obj.unitlongaxis[1], center.obj.unitlongaxis[2])))
-                    ofs.write("%f %f %f\n"%(center.obj.unitpolaraxis[0], center.obj.unitpolaraxis[1], center.obj.unitpolaraxis[2]))
+                    mol = center.obj
+                    for m in mol.indices_mol:
+                        formatlist[m] = phi_list[idx]
+                    idx += 1
     
-                    ofla.write("%f %f %f\n"%((math.degrees(center.obj.angle_longaxis[0]), math.degrees(center.obj.angle_longaxis[1]), math.degrees(center.obj.angle_longaxis[2]))))
-                    ofsa.write("%f %f %f\n"%(math.degrees(center.obj.angle_polaraxis[0]), math.degrees(center.obj.angle_polaraxis[1]), math.degrees(center.obj.angle_polaraxis[2])))
+        cubic.dump_lammps_dump(outfilename = "formated_traj.dump", formlist = formatlist, append="a", step = i_frame)
         
-        ofl.close()
-        ofs.close()
-        ofla.close()
-        ofsa.close()
-        ofc.close()
-        etime = time.time()
-        print(etime-stime)
-        stime = etime

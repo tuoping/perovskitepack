@@ -16,15 +16,16 @@ f1 = "mol_center_coords_frame0"
 coord = np.loadtxt(f1, skiprows=0)
 coord = coord.T
 
+mesh_size = [60,60,2]
 caxis = int(np.loadtxt("caxis"))
 x = np.array(coord[(caxis+1)%3])
 y = np.array(coord[(caxis+2)%3])
 z = np.array(coord[caxis])
 # phi_list_all = []
-for i_frame in range(11):
+for i_frame in range(1):
 
     Totaltime = 100
-    Num_mol = 800
+    Num_mol = mesh_size[0]*mesh_size[1]*mesh_size[2]
     _data = np.loadtxt(dirname+"/mol_longaxis_frame"+str(i_frame), skiprows=0)
     data = _data
     data = np.reshape(data, [-1, Num_mol, 3])
@@ -55,9 +56,9 @@ for i_frame in range(11):
     for m in range(Totaltime):
         idx = 0
         data_xy = [[],[]]
-        for i in range(20):
-            for j in range(20):
-                for k in range(2):
+        for i in range(mesh_size[0]):
+            for j in range(mesh_size[1]):
+                for k in range(mesh_size[2]):
                     # if data[m][idx][np.argmax(np.abs(data[m][idx]))] <0:
                     #     data[m][idx] = -data[m][idx]
                     mol = np.array([data[m][idx][(caxis+1)%3],data[m][idx][(caxis+2)%3],data[m][idx][caxis]])
