@@ -5,7 +5,7 @@ from matplotlib.collections import LineCollection
 import sys
 
 # filename = sys.argv[1]
-f1 = "center_coords"
+f1 = "mesh_coords"
 
 coord = np.loadtxt(f1, skiprows=0)[-256:]
 coord = coord.T
@@ -22,10 +22,10 @@ f3 = "right_distances"
 data2 = np.loadtxt(f3)[-256:]
 
 data = [data1[i]/data2[i] for i in range(len(data1))]
-# data = [int(data1[i]/data2[i] > 1) for i in range(len(data1))]
-plt.scatter(x,y,c=data, cmap="rainbow")
+data = [int(data1[i]/data2[i] > 1) for i in range(len(data1))]
+plt.scatter(x,y,c=data, cmap="rainbow", marker="s", s=1000)
 plt.colorbar()
-plt.savefig("pbpbd_ratio", dpi=1100, bbox_inches = "tight")
+plt.savefig("pbpbd_ratio", bbox_inches = "tight")
 
 # data1 = np.loadtxt(f2)[:512*3].T[1]
 # phix = [data1[i] for i in range(512*3) if i%3 == 0]
