@@ -202,18 +202,20 @@ class Octahedron(object):
 
 class mesh_point(object):
 
-    def __init__(self, index, coord, obj = None):
+    def __init__(self, index, coord, obj = None, i_obj = None):
         self.index = index
         self.coord = np.array(coord)
         # self.boundaries = np.array(boundaries)
         self.obj = obj
+        self.i_obj = i_obj
 
-    def set_obj(self, obj:object, c):
+    def set_obj(self, obj:object, c, i):
         if self.obj is not None:
             print(self.coord, c, self.obj.center_coord)
             # raise Exception("mesh_point already occupied")
             return False
         self.obj = obj
+        self.i_obj = i
         return True
 
 class Mesh(object):
@@ -247,7 +249,29 @@ class Mesh(object):
         
     def map_coord_mesh(self, coord):
         mesh_point_list = []
-        c_list = coord[np.newaxis,:]+self.eps
+        c_list = coord[np.newaxis,:] +[[self.eps, 0, 0]]
+        c_list = coord[np.newaxis,:] +[[0, 0, 0]]
+        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, 0, 0]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[0, self.eps, 0]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[ 0,-self.eps, 0]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[0, 0, self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[0, 0,-self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[0,  self.eps, self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[0, -self.eps,-self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[0,  self.eps,-self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[0, -self.eps, self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, -self.eps, 0]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, self.eps, 0]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, self.eps, 0]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, -self.eps, 0]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, self.eps, self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, -self.eps, -self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, -self.eps, -self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, -self.eps, self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, self.eps, -self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, self.eps, self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, -self.eps, self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, self.eps, -self.eps]]))
         for c in c_list:
             icoord = phys2Inter(c, self.cell)
             x = int(icoord[0])
@@ -291,14 +315,32 @@ class Mesh(object):
             mesh_point_list, c_list = self.map_coord_mesh(c)
             for idx_c in range(len(c_list)):
                 for idx_mesh, mesh_point in enumerate(mesh_point_list):
-                    Succeed = mesh_point.set_obj(obj[i], c_list[idx_c])
+                    Succeed = mesh_point.set_obj(obj[i], c_list[idx_c],i)
                     if Succeed:
                         break
                 if Succeed:
                     break
             if not Succeed:
                 return False
+        self.output_mesh()
         return True
+
+    def read_obj_mesh(self, objmesh, obj):
+        for m in range(objmesh.shape[0]):
+            i = int(objmesh[m][0])
+            j = int(objmesh[m][1])
+            k = int(objmesh[m][2])
+            i_obj = int(objmesh[m][3])
+            self.mesh[i][j][k].set_obj(obj[i_obj], obj[i_obj].center_coord, i_obj)
+
+    def output_mesh(self):
+        foutput = open("objmesh.dat", "w")
+        for i in range(self.mesh_size[0]):
+            for j in range(self.mesh_size[1]):
+                for k in range(self.mesh_size[2]):
+                    foutput.write("%d  %d  %d   %d\n"%(i,j,k,self.mesh[i][j][k].i_obj))
+        foutput.close()
+        
 
 
 class Molecule(object):
