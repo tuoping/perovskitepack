@@ -13,8 +13,8 @@ def pbc_idx(idx):
         return 2
     return idx
 
-#ifiles = sorted(glob.glob("traj/*.lammpstrj"), key=getorder)
-ifiles = ["traj/"+str(i)+".lammpstrj" for i in range(1000000, 2000000, 1000)]
+ifiles = sorted(glob.glob("traj/*.lammpstrj"), key=getorder)
+#ifiles = ["traj/"+str(i)+".lammpstrj" for i in range(1000000, 2000000, 1000)]
 of = open("cellsize.out", "w")
 of.write("step    a  b  c\n")
 of2 = open("diag-cellsize.out", "w")
@@ -22,8 +22,8 @@ of2.write("step    a  b  c\n")
 atot = 0.0
 btot = 0.0
 ctot = 0.0
-caxis = int(np.loadtxt("caxis"))
-# caxis = 2
+# caxis = int(np.loadtxt("caxis"))
+caxis = 2
 k=0
 for fname in ifiles:
     f = re.match("traj/(.*?).lammpstrj", fname)
