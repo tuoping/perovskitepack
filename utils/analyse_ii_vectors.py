@@ -6,18 +6,8 @@ of1 = open("ii_phi.out", "w")
 # of2 = open("ii_theta.out", "w")
 of1.write("T  average_phi  std_phi\n")
 # of2.write("T  average_theta  std_theta\n")
-for T in [50]+[i for i in range(52,64)]+[i for i in range(65,106)]+[i for i in range(110,136,5)]+[i for i in range(136,146)]+[i for i in range(147,151)]+[i for i in range(152,155)]+[170,190,195,200,205,210,215,220,225,230,250,255,260,265,270,275,280,285,290,295,300,305,310,320,340,350,400,450]:
-    dirname = None
-    if T >=50 & T <=155:
-        dirname = "annealT"+str(T)
-    if T in [i for i in range(170,330,20)]+[350]:
-        dirname = "1-2ns-T"+str(T)
-    if T in [195,200,205,215,220,225,295,300,305]:
-        dirname = "0-2ns-T"+str(T)
-    if T in [255,260,265,275,280,285,320,340]:
-        dirname = "0-3ns-T"+str(T)
-    if T in [400,450]:
-        dirname = "T"+str(T)
+for T in [100,110,120,130,140,155,175,195,215,235,255,275,295,315,335,355,375,395,415]:
+    dirname = "T"+str(T)
     print(dirname)
 
     data = np.loadtxt(dirname+"/ii_vectors_caxis.dat").T
