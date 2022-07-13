@@ -24,6 +24,7 @@ if __name__ == "__main__":
     ofr = open("right_distances", "w")
     ofl = open("left_distances", "w")
     ofc = open("center_coords", "w")
+    ofm = open("mesh_coords", "w")
     f = open("ii_vectors_caxis.dat", "w")
     ofcd = open("c_distances", "w")
     # import cubic perovskite
@@ -51,8 +52,12 @@ if __name__ == "__main__":
         # start a mesh
         mesh_dim = [30,30,2]
         cubic.startmesh(mesh_dim, eps=0.0)
-        indices_oct = cubic.extract_octahedron()
-        np.save("indices_oct.npy", indices_oct)
+        try:
+            indices_oct = np.load("indices_oct.npy")
+            cubic.extract_octahedron_from_indices(indices_oct)
+        except:
+            indices_oct = cubic.extract_octahedron()
+            np.save("indices_oct.npy", indices_oct)
 
     
         ### map octahedra to mesh
@@ -80,6 +85,7 @@ if __name__ == "__main__":
                 for k in range(num[2]):
                     center = mesh.get_mesh_point(i,j,k)
                     ofc.write("%f %f %f\n"%(center.obj.center_coord[0], center.obj.center_coord[1], center.obj.center_coord[2]))
+                    ofm.write("%d %d %d\n"%(i,j,k))
                     if caxis == 0:
                         leftlow = mesh.get_mesh_point(i,j-1,k-1)
                         leftup = mesh.get_mesh_point(i,j-1,k+1)
@@ -109,4 +115,5 @@ if __name__ == "__main__":
     ofr.close()
     ofl.close()
     ofc.close()
+    ofm.close()
     ofcd.close()
