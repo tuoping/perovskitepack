@@ -4,7 +4,7 @@ import math
 import matplotlib.pyplot as plt
 dirname = "./"
 caxis = int(np.loadtxt(dirname+"/caxis"))
-mesh_size = [30,30,2]
+mesh_size = [10,10,10]
 
 Totaltime = 1
 Num_oct = mesh_size[0]*mesh_size[1]*mesh_size[2]
@@ -46,7 +46,7 @@ y = np.array(coord[(caxis+2)%3])
 z = np.array(coord[caxis])
 
 fig = plt.figure()
-plt.scatter(x,y,c=phiy_symbol, marker="s",s=60, cmap="rainbow")
+plt.scatter(x,y,c=phiy_symbol, marker="D",s=600, cmap="rainbow", vmin=0, vmax=10)
 plt.colorbar()
 figfilename = "phiy_ii"
 plt.savefig(figfilename, bbox_inches = "tight")

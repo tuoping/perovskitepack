@@ -23,6 +23,8 @@ if __name__ == "__main__":
     # Output files
     ofr = open("right_distances", "w")
     ofl = open("left_distances", "w")
+    ofh = open("horizontal_distances", "w")
+    ofv = open("vertical_distances", "w")
     ofc = open("center_coords", "w")
     ofm = open("mesh_coords", "w")
     f = open("ii_vectors_caxis.dat", "w")
@@ -50,7 +52,7 @@ if __name__ == "__main__":
         cubic.setcutoff_I_Pb(5.0)
     
         # start a mesh
-        mesh_dim = [30,30,2]
+        mesh_dim = [8,8,4]
         cubic.startmesh(mesh_dim, eps=0.0)
         try:
             indices_oct = np.load("indices_oct.npy")
@@ -79,6 +81,8 @@ if __name__ == "__main__":
 
         right_distances = []
         left_distances = []
+        h_distances = []
+        v_distances = []
         c_distances = []
         for i in range(num[0]):
             for j in range(num[1]):
@@ -89,21 +93,31 @@ if __name__ == "__main__":
                     if caxis == 0:
                         leftlow = mesh.get_mesh_point(i,j-1,k-1)
                         leftup = mesh.get_mesh_point(i,j-1,k+1)
+                        right = mesh.get_mesh_point(i,j+1,k)
+                        up = mesh.get_mesh_point(i,j,k+1)
                         c_d = mesh.get_mesh_point(i-1,j,k)
                     if caxis == 1:
                         leftlow = mesh.get_mesh_point(i-1,j,k-1)
                         leftup = mesh.get_mesh_point(i+1,j,k-1)
+                        right = mesh.get_mesh_point(i,j,k+1)
+                        up = mesh.get_mesh_point(i+1,j,k)
                         c_d = mesh.get_mesh_point(i,j-1,k)
                     if caxis == 2:
                         leftlow = mesh.get_mesh_point(i-1,j-1,k)
                         leftup = mesh.get_mesh_point(i-1,j+1,k)
+                        right = mesh.get_mesh_point(i+1,j,k)
+                        up = mesh.get_mesh_point(i,j+1,k)
                         c_d = mesh.get_mesh_point(i,j,k-1)
                     
                     right_distances.append(np.linalg.norm(distance(center.obj.center_coord, leftlow.obj.center_coord, cubic.cell)))
                     left_distances.append(np.linalg.norm(distance(center.obj.center_coord, leftup.obj.center_coord, cubic.cell)))
+                    h_distances.append(np.linalg.norm(distance(center.obj.center_coord, right.obj.center_coord, cubic.cell)))
+                    v_distances.append(np.linalg.norm(distance(center.obj.center_coord, up.obj.center_coord, cubic.cell)))
                     c_distances.append(np.linalg.norm(distance(center.obj.center_coord, c_d.obj.center_coord, cubic.cell)))
                     ofr.write("%f\n"%(right_distances[-1]))
                     ofl.write("%f\n"%(left_distances[-1]))
+                    ofh.write("%f\n"%(h_distances[-1]))
+                    ofv.write("%f\n"%(v_distances[-1]))
                     ofcd.write("%f\n"%(c_distances[-1]))
                   
         for oct in cubic.octahedra:
