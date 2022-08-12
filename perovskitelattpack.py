@@ -701,6 +701,12 @@ class FAPbI3(object):
             new_FAPbI3.cubic.data["coords"] = np.vstack((new_FAPbI3.cubic["coords"][0], np.array([coord])))[np.newaxis, :]
         return new_FAPbI3
 
+    def add_atom_names(self, atom_names):
+        self.cubic.add_atom_names(atom_names)
+        for a in atom_names:
+            self.types[a] = self.cubic["atom_names"].index(a)
+
+
     def add_atom(self, atom_name, atom_coord):
         '''
         self.data = {}
@@ -711,6 +717,8 @@ class FAPbI3(object):
         self.data['cells'] = []
         self.data['coords'] = []
         '''
+        if atom_name not in self.cubic["atom_names"]:
+            self.add_atom_names([atom_name])
         atom_type = self.types[atom_name]
         self.cubic.data["atom_numbs"][atom_type] += 1
         self.cubic.data["atom_types"] = np.append(self.cubic.data["atom_types"], atom_type)
@@ -733,6 +741,18 @@ class FAPbI3(object):
         new_FAPbI3 = self.copy()
         new_FAPbI3.cubic = new_sys
         new_FAPbI3.molecules = new_molecules
+        return new_FAPbI3
+
+    def remove_atom(self, idx):
+        if idx > sum(self.cubic["atom_numbs"]):
+            print(idx, sum(self.cubic["atom_numbs"]))
+            raise Exception("Idx out of range")
+        removed_atom_idx = idx
+        picked_atom_idx = np.delete(np.arange(sum(self.cubic["atom_numbs"])), removed_atom_idx)
+        new_sys = self.cubic.pick_atom_idx(picked_atom_idx)
+        new_FAPbI3 = self.copy()
+        new_FAPbI3.cubic = new_sys
+        new_FAPbI3.types = self.types
         return new_FAPbI3
 
     def copy(self):
