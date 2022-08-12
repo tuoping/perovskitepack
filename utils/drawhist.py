@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-def drawHist(ax, heights,bounds=None, hnum=200,xlabel="x", ylabel="y",title="", xlimit = None, ylimit=None):
+def drawHist(ax, heights,bounds=None, hnum=50,xlabel="x", ylabel="y",title="", xlimit = None, ylimit=None):
     ax.hist(heights, hnum, align='mid',range=bounds)
     # plt.hist(heights, hnum, align='mid',range=bounds)
     # plt.title(title)
@@ -22,23 +22,24 @@ def drawHist(ax, heights,bounds=None, hnum=200,xlabel="x", ylabel="y",title="", 
         plt.ylim(ylimit)
 
 
-filename = sys.argv[1] 
-d = np.loadtxt(filename).T
-d0 = d[0]
+dirname = "./"
+caxis = int(np.loadtxt(dirname+"/caxis"))
+mesh_size = [10,10,10]
+
+Totaltime = 1
+Num_oct = mesh_size[0]*mesh_size[1]*mesh_size[2]
+data = np.loadtxt(dirname+"/ii_vectors_caxis.dat")
+data = np.reshape(data, [-1,Num_oct,3,2])
+Totaltime = len(data)
+print("Totaltime = ", Totaltime)
+phiy= np.abs(data[:,:,1,1])
+
 xlimit = None
 fig = plt.figure()
-ax1 = fig.add_subplot(311)
-drawHist(ax1, d0, xlimit)
-
-d1 = d[1]
-ax2 = fig.add_subplot(312)
-drawHist(ax2, d1, xlimit)
-
-d2 = d[2]
-ax3 = fig.add_subplot(313)
-drawHist(ax3, d2, xlimit)
+ax1 = fig.add_subplot(111)
+drawHist(ax1, phiy[0], xlimit)
 
 # figfilename = filename.replace(".dat", ".png")
-figfilename = "molcorr.png" 
+figfilename = "hist_ii_vector.png" 
 plt.savefig(figfilename, bbox_inches = "tight")
 plt.show()
