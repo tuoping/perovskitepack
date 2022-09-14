@@ -403,6 +403,14 @@ class Molecule(object):
             new_coords[i] += self.center_coord
         return new_coords
 
+    def set_normal_vec(self):
+        vec1 = distance(self.coords_mol[0], self.coords_mol[1], self.cell)
+        vec2 = distance(self.coords_mol[0], self.coords_mol[2], self.cell)
+        if sum(vec1<vec2) > 1:
+            self.normal = np.cross(vec1, vec2)
+        else:
+            self.normal = np.cross(vec2, vec1)
+
 
 class FAPbI3(object):
 
