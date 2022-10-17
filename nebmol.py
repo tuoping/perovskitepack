@@ -58,8 +58,8 @@ def add_mol(mid, coords):
 
 
 
-ini = FAPbI3("ini/CONTCAR", fmt="vasp/poscar")
-fin = FAPbI3("fin/CONTCAR", fmt="vasp/poscar")
+ini = FAPbI3("hex.vasp", fmt="vasp/poscar")
+fin = FAPbI3("interface.vasp", fmt="vasp/poscar")
 
 ini.extract_mol()
 fin.extract_mol()
@@ -87,9 +87,9 @@ print("\n")
 for imol in range(len(ini.molecules)):
     print(polaraxis_ini[imol], polaraxis_fin[imol])
 
-normals_mid = np.zeros([18,4,3])
-polaraxis_mid = np.zeros([18,4,3])
-for imid in range(1,17):
+normals_mid = np.zeros([8,4,3])
+polaraxis_mid = np.zeros([8,4,3])
+for imid in range(1,8):
     mid = dpdata.System("%02d/POSCAR"%imid, "vasp/poscar")
     mid.add_atom_names("N")
     mid.add_atom_names("H")
