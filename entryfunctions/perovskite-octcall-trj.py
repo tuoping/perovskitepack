@@ -12,7 +12,7 @@ from collections import Counter
 from perovskitelattpack import *
 
 if __name__ == "__main__":
-    filename = sys.argv[1]
+    # filename = sys.argv[1]
     # read "caxis"
     caxis = int(np.loadtxt("caxis"))
     ref_axis = np.eye(3)
@@ -23,25 +23,26 @@ if __name__ == "__main__":
     # Output files
     ofr = open("right_distances", "w")
     ofl = open("left_distances", "w")
-    ofh = open("horizontal_distances", "w")
-    ofv = open("vertical_distances", "w")
     ofc = open("center_coords", "w")
-    ofm = open("mesh_coords", "w")
-    f = open("ii_vectors_caxis.dat", "w")
+    # f = open("ii_vectors_caxis.dat", "w")
     ofcd = open("c_distances", "w")
-    # import cubic perovskite
-    if filename.endswith(".lmp"):
-        fmt = "lammps/lmp"
-    else:
-        if filename.endswith(".lammpstrj") or filename.endswith(".dump"):
-            fmt = "lammps/dump"
-        else:
-            if filename.endswith(".vasp") or filename.endswith("POSCAR") or filename.endswith("CONTCAR"):
-                fmt = "vasp/poscar"
-            else:
-                raise Exception("Unknown file format")
-    traj = dpdata.System(filename, fmt=fmt)
-    for i in range(1):
+    fmt = "lammps/dump"
+    # # import cubic perovskite
+    # if filename.endswith(".lmp"):
+    #     fmt = "lammps/lmp"
+    # else:
+    #     if filename.endswith(".lammpstrj") or filename.endswith(".dump"):
+    #         fmt = "lammps/dump"
+    #     else:
+    #         if filename.endswith(".vasp") or filename.endswith("POSCAR") or filename.endswith("CONTCAR"):
+    #             fmt = "vasp/poscar"
+    #         else:
+    #             raise Exception("Unknown file format")
+    for i_frame in range(3000000, 4010000, 10000):
+        filename = "traj/"+str(i_frame)+".lammpstrj"
+        traj = dpdata.System(filename, fmt=fmt)
+        #for i in range(traj.get_nframes()):
+        i=0
         print("frame "+str(i))
         frm = traj[i]
         cubic = FAPbI3(frm, fmt=fmt)
@@ -52,7 +53,7 @@ if __name__ == "__main__":
         cubic.setcutoff_I_Pb(5.0)
     
         # start a mesh
-        mesh_dim = [30,30,2]
+        mesh_dim = [8,8,4]
         cubic.startmesh(mesh_dim, eps=0.0)
         try:
             indices_oct = np.load("indices_oct.npy")
@@ -74,60 +75,55 @@ if __name__ == "__main__":
                 Succeed = cubic.mesh.map_obj_mesh(cubic.octahedra)
                 if not Succeed:
                     print("skippinng frame "+str(i))
-                    continue
+                    raise Exception("mapping failed")
 
         num = cubic.mesh.mesh_size
         mesh = cubic.mesh
 
         right_distances = []
         left_distances = []
-        h_distances = []
-        v_distances = []
         c_distances = []
+        ofm0 = open("ii_vectors0_mesh_frame"+str(i_frame)+".dat", "w")
+        ofm1 = open("ii_vectors1_mesh_frame"+str(i_frame)+".dat", "w")
+        ofm2 = open("ii_vectors2_mesh_frame"+str(i_frame)+".dat", "w")
         for i in range(num[0]):
             for j in range(num[1]):
                 for k in range(num[2]):
                     center = mesh.get_mesh_point(i,j,k)
                     ofc.write("%f %f %f\n"%(center.obj.center_coord[0], center.obj.center_coord[1], center.obj.center_coord[2]))
-                    ofm.write("%d %d %d\n"%(i,j,k))
                     if caxis == 0:
                         leftlow = mesh.get_mesh_point(i,j-1,k-1)
                         leftup = mesh.get_mesh_point(i,j-1,k+1)
-                        right = mesh.get_mesh_point(i,j+1,k)
-                        up = mesh.get_mesh_point(i,j,k+1)
                         c_d = mesh.get_mesh_point(i-1,j,k)
                     if caxis == 1:
                         leftlow = mesh.get_mesh_point(i-1,j,k-1)
                         leftup = mesh.get_mesh_point(i+1,j,k-1)
-                        right = mesh.get_mesh_point(i,j,k+1)
-                        up = mesh.get_mesh_point(i+1,j,k)
                         c_d = mesh.get_mesh_point(i,j-1,k)
                     if caxis == 2:
                         leftlow = mesh.get_mesh_point(i-1,j-1,k)
                         leftup = mesh.get_mesh_point(i-1,j+1,k)
-                        right = mesh.get_mesh_point(i+1,j,k)
-                        up = mesh.get_mesh_point(i,j+1,k)
                         c_d = mesh.get_mesh_point(i,j,k-1)
                     
                     right_distances.append(np.linalg.norm(distance(center.obj.center_coord, leftlow.obj.center_coord, cubic.cell)))
                     left_distances.append(np.linalg.norm(distance(center.obj.center_coord, leftup.obj.center_coord, cubic.cell)))
-                    h_distances.append(np.linalg.norm(distance(center.obj.center_coord, right.obj.center_coord, cubic.cell)))
-                    v_distances.append(np.linalg.norm(distance(center.obj.center_coord, up.obj.center_coord, cubic.cell)))
                     c_distances.append(np.linalg.norm(distance(center.obj.center_coord, c_d.obj.center_coord, cubic.cell)))
                     ofr.write("%f\n"%(right_distances[-1]))
                     ofl.write("%f\n"%(left_distances[-1]))
-                    ofh.write("%f\n"%(h_distances[-1]))
-                    ofv.write("%f\n"%(v_distances[-1]))
                     ofcd.write("%f\n"%(c_distances[-1]))
+                    ofm0.write("%f %f %f\n"%(center.obj.II_vectors[0][0],center.obj.II_vectors[0][1],center.obj.II_vectors[0][2]))
+                    ofm1.write("%f %f %f\n"%(center.obj.II_vectors[1][0],center.obj.II_vectors[1][1],center.obj.II_vectors[1][2]))
+                    ofm2.write("%f %f %f\n"%(center.obj.II_vectors[2][0],center.obj.II_vectors[2][1],center.obj.II_vectors[2][2]))
                   
-        for oct in cubic.octahedra:
-            f.write("%f %f\n"%(math.degrees(oct.theta_II_vectors[0]), math.degrees(oct.phi_II_vectors[0])))
-            f.write("%f %f\n"%(math.degrees(oct.theta_II_vectors[1]), math.degrees(oct.phi_II_vectors[1])))
-            f.write("%f %f\n"%(math.degrees(oct.theta_II_vectors[2]), math.degrees(oct.phi_II_vectors[2])))
-            f.write("\n")
-    f.close()
+        ofm0.close()
+        ofm1.close()
+        ofm2.close()
+        # for oct in cubic.octahedra:
+        #     f.write("%f %f\n"%(math.degrees(oct.theta_II_vectors[0]), math.degrees(oct.phi_II_vectors[0])))
+        #     f.write("%f %f\n"%(math.degrees(oct.theta_II_vectors[1]), math.degrees(oct.phi_II_vectors[1])))
+        #     f.write("%f %f\n"%(math.degrees(oct.theta_II_vectors[2]), math.degrees(oct.phi_II_vectors[2])))
+        #     f.write("\n")
+    #f.close()
     ofr.close()
     ofl.close()
     ofc.close()
-    ofm.close()
     ofcd.close()

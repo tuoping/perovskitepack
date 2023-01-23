@@ -878,6 +878,162 @@ class FAPbI3(object):
         fdump.close()
 
 
+
+
+def molecular_order_parameter_by_mesh(mesh, mollist, cell):
+    mesh = mesh.T
+    vecdot_x = 0.0
+    vecdot_y = 0.0
+    vecdot_z = 0.0
+    corr_x = 0.0
+    corr_y = 0.0
+    corr_z = 0.0
+    for idx_mol in range(len(mollist)):
+        x_mol = mesh[0][idx_mol]
+        y_mol = mesh[1][idx_mol]
+        z_mol = mesh[2][idx_mol]
+        
+        if x_mol - 1 < 0:
+            x_mol_left = max(mesh[0])
+        else:
+            x_mol_left = x_mol - 1
+        if y_mol - 1 < 0:
+            y_mol_left = max(mesh[1])
+        else:
+            y_mol_left = y_mol - 1
+        if z_mol - 1 < 0:
+            z_mol_left = max(mesh[2])
+        else:
+            z_mol_left = z_mol - 1
+
+        if x_mol + 1 > max(mesh[0]):
+            x_mol_right = 0
+        else:
+            x_mol_right = x_mol + 1
+        if y_mol + 1 > max(mesh[1]):
+            y_mol_right = 0
+        else:
+            y_mol_right = y_mol + 1
+        if z_mol + 1 > max(mesh[2]):
+            z_mol_right = 0
+        else:
+            z_mol_right = z_mol + 1
+
+        xlimit = np.where(mesh[0]==x_mol)[0]
+        ylimit = np.where(mesh[1]==y_mol)[0]
+        zlimit = np.where(mesh[2]==z_mol)[0]
+        
+        xplane = np.concatenate((np.array(np.where(mesh[0]==x_mol_left)[0]), np.array(np.where(mesh[0]==x_mol_right)[0])))
+        xnlist = np.intersect1d(np.intersect1d(xplane, ylimit), zlimit)
+        
+        yplane = np.concatenate((np.array(np.where(mesh[1]==y_mol_left)[0]), np.array(np.where(mesh[1]==y_mol_right)[0])))
+        ynlist = np.intersect1d(np.intersect1d(yplane, xlimit), zlimit)
+        
+        zplane = np.concatenate((np.array(np.where(mesh[2]==z_mol_left)[0]), np.array(np.where(mesh[2]==z_mol_right)[0])))
+        znlist = np.intersect1d(np.intersect1d(zplane, xlimit), ylimit)
+
+        assert(len(xnlist)==2)
+        assert(len(ynlist)==2)
+        assert(len(znlist)==2)
+        
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[0]]))-1.0 < 1e-6)
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[0]]))-1.0 < 1e-6)
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]]))-1.0 < 1e-6)
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[1]]))-1.0 < 1e-6)
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[1]]))-1.0 < 1e-6)
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]]))-1.0 < 1e-6)
+        corr_x += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[0]])),1.0))
+        corr_y += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[0]])),1.0))
+        corr_z += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
+        corr_x += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[1]])),1.0))
+        corr_y += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[1]])),1.0))
+        corr_z += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
+        vecdot_x += (min(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[0]])),1.0))
+        vecdot_y += (min(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[0]])),1.0))
+        vecdot_z += (min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
+        vecdot_x += (min(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[1]])),1.0))
+        vecdot_y += (min(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[1]])),1.0))
+        vecdot_z += (min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
+          
+    print(vecdot_x, vecdot_y, vecdot_z)
+    return corr_x/2/math.pi/len(mollist), corr_y/2/math.pi/len(mollist), corr_z/2/math.pi/len(mollist)
+
+def frame_order_parameter_by_mesh(mesh, octlist, cell):
+    mesh = mesh.T
+
+    corr_x = 1.0
+    corr_y = 1.0
+    corr_z = 1.0
+    for idx_mol in range(len(octlist)):
+        x_mol = mesh[0][idx_mol]
+        y_mol = mesh[1][idx_mol]
+        z_mol = mesh[2][idx_mol]
+        
+        if x_mol - 1 < 0:
+            x_mol_left = max(mesh[0])
+        else:
+            x_mol_left = x_mol - 1
+        if y_mol - 1 < 0:
+            y_mol_left = max(mesh[1])
+        else:
+            y_mol_left = y_mol - 1
+        if z_mol - 1 < 0:
+            z_mol_left = max(mesh[2])
+        else:
+            z_mol_left = z_mol - 1
+
+        if x_mol + 1 > max(mesh[0]):
+            x_mol_right = 0
+        else:
+            x_mol_right = x_mol + 1
+        if y_mol + 1 > max(mesh[1]):
+            y_mol_right = 0
+        else:
+            y_mol_right = y_mol + 1
+        if z_mol + 1 > max(mesh[2]):
+            z_mol_right = 0
+        else:
+            z_mol_right = z_mol + 1
+
+        xlimit = np.where(mesh[0]==x_mol)[0]
+        ylimit = np.where(mesh[1]==y_mol)[0]
+        zlimit = np.where(mesh[2]==z_mol)[0]
+        
+        xplane = np.concatenate((np.array(np.where(mesh[0]==x_mol_left)[0]), np.array(np.where(mesh[0]==x_mol_right)[0])))
+        xnlist = np.intersect1d(np.intersect1d(xplane, ylimit), zlimit)
+        
+        yplane = np.concatenate((np.array(np.where(mesh[1]==y_mol_left)[0]), np.array(np.where(mesh[1]==y_mol_right)[0])))
+        ynlist = np.intersect1d(np.intersect1d(yplane, xlimit), zlimit)
+        
+        zplane = np.concatenate((np.array(np.where(mesh[2]==z_mol_left)[0]), np.array(np.where(mesh[2]==z_mol_right)[0])))
+        znlist = np.intersect1d(np.intersect1d(zplane, xlimit), ylimit)
+
+        assert(len(xnlist)==2)
+        assert(len(ynlist)==2)
+        assert(len(znlist)==2)
+        
+        assert(np.dot(octlist[idx_mol][0], octlist[xnlist[0]][0])-1.0 < 1e-6)
+        assert(np.dot(octlist[idx_mol][1], octlist[xnlist[0]][1])-1.0 < 1e-6)
+        assert(np.dot(octlist[idx_mol][2], octlist[xnlist[0]][2])-1.0 < 1e-6)
+        assert(np.dot(octlist[idx_mol][0], octlist[xnlist[1]][0])-1.0 < 1e-6)
+        assert(np.dot(octlist[idx_mol][1], octlist[xnlist[1]][1])-1.0 < 1e-6)
+        assert(np.dot(octlist[idx_mol][2], octlist[xnlist[1]][2])-1.0 < 1e-6)
+
+        corr_x *= np.dot(octlist[idx_mol][1], octlist[xnlist[0]][1])
+        corr_x *= np.dot(octlist[idx_mol][2], octlist[xnlist[0]][2])
+        corr_x *= np.dot(octlist[idx_mol][1], octlist[xnlist[1]][1])
+        corr_x *= np.dot(octlist[idx_mol][2], octlist[xnlist[1]][2])
+        corr_y *= np.dot(octlist[idx_mol][0], octlist[ynlist[0]][0])
+        corr_y *= np.dot(octlist[idx_mol][2], octlist[ynlist[0]][2])
+        corr_y *= np.dot(octlist[idx_mol][0], octlist[ynlist[1]][0])
+        corr_y *= np.dot(octlist[idx_mol][2], octlist[ynlist[1]][2])
+        corr_z *= np.dot(octlist[idx_mol][0], octlist[znlist[0]][0])
+        corr_z *= np.dot(octlist[idx_mol][1], octlist[znlist[0]][1])
+        corr_z *= np.dot(octlist[idx_mol][0], octlist[znlist[1]][0])
+        corr_z *= np.dot(octlist[idx_mol][1], octlist[znlist[1]][1])
+          
+    return math.pow(corr_x, 2/len(octlist)), math.pow(corr_y, 2/len(octlist)), math.pow(corr_z, 2/len(octlist))
+
 if __name__ == "__main__":
     filename = sys.argv[1]
     # import cubic perovskite
