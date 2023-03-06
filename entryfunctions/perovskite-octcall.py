@@ -9,6 +9,9 @@ import sys, os
 import datetime
 from collections import Counter
 
+
+SCRIPT_DIR = "/data/FAPbI3/phasediagram-md/batch2-2conf/cubic/perovskitepack"
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 from perovskitelattpack import *
 
 if __name__ == "__main__":
@@ -63,18 +66,21 @@ if __name__ == "__main__":
 
     
         ### map octahedra to mesh
-        Succeed = cubic.mesh.map_obj_mesh(cubic.octahedra)
-        if not Succeed:
-            print("eps = 2.0")
+        try:
+            octmesh = np.loadtxt("objmesh.dat")   
+            size = octmesh.shape[0]
+            #length = int(math.pow(size/2, 1/2))
+            #mesh_dim = [length, length, 2]
+            cubic.startmesh(mesh_dim, eps=2.0) 
+            cubic.mesh.read_obj_mesh(octmesh, cubic.octahedra)
+        except:
             cubic.startmesh(mesh_dim, eps=2.0) 
             Succeed = cubic.mesh.map_obj_mesh(cubic.octahedra)
             if not Succeed:
-                print("eps = -2.0")
-                cubic.startmesh(mesh_dim, eps=-2.0)
+                cubic.startmesh(mesh_dim, eps=-2.0) 
                 Succeed = cubic.mesh.map_obj_mesh(cubic.octahedra)
                 if not Succeed:
-                    print("skippinng frame "+str(i))
-                    continue
+                    raise Exception("mapping failed")
 
         num = cubic.mesh.mesh_size
         mesh = cubic.mesh
@@ -84,9 +90,9 @@ if __name__ == "__main__":
         h_distances = []
         v_distances = []
         c_distances = []
-        for i in range(num[0]):
-            for j in range(num[1]):
-                for k in range(num[2]):
+        for j in range(0,num[1]):
+            for i in range(0,num[0]):
+                for k in range(0,num[2]):
                     center = mesh.get_mesh_point(i,j,k)
                     ofc.write("%f %f %f\n"%(center.obj.center_coord[0], center.obj.center_coord[1], center.obj.center_coord[2]))
                     ofm.write("%d %d %d\n"%(i,j,k))

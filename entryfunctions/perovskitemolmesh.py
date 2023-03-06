@@ -51,12 +51,12 @@ if __name__ == "__main__":
         # start a mesh
         ### map molecules to mesh
         try:
-            objmesh = np.loadtxt("objmesh.dat")   
-            size = objmesh.shape[0]
+            molmesh = np.loadtxt("molmesh.dat")   
+            size = molmesh.shape[0]
             length = int(math.pow(size/2, 1/2))
             mesh_dim = [length, length, 2]
             cubic.startmesh(mesh_dim, eps=2.0) 
-            cubic.mesh.read_obj_mesh(objmesh, cubic.molecules)
+            cubic.mesh.read_obj_mesh(molmesh, cubic.molecules)
         except:
             mesh_dim = [60,60,2]
             cubic.startmesh(mesh_dim, eps=2.0) 

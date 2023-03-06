@@ -23,10 +23,10 @@ def Linearfunction(x,A,B):
     return A*x+B
 
 ffit = open("centers.dat", "w")
-for T in [i for i in range(100, 145, 10)]+[i for i in range(155, 440, 20)]:
+for T in [50,52,53,150,152,153]:
     dirname = None
     if T < 155:
-        dirname = "T"+str(T)
+        dirname = "annealT"+str(T)
     else:
         dirname = "T"+str(T)
     print(dirname)
@@ -38,14 +38,14 @@ for T in [i for i in range(100, 145, 10)]+[i for i in range(155, 440, 20)]:
     plt.figure()
     plt.scatter(x, y)
         
-    if T < 195:
-        popt, pcov = curve_fit(function, x, y, bounds=([8, 8.5, 0.1, 0.1, 1000, 1000], [9, 9.5, 0.5, 0.5, 5000, 5000]))
-        ffit.write("%d    %f  %f\n"%(T, popt[0], popt[1]))
-        y_pred = [function(i,*popt) for i in x]
-    else:
-        popt, pcov = curve_fit(function_1G, x, y, bounds=([8, 0.1, 1000], [9.5, 0.5, 5000]))
-        ffit.write("%d    %f  %f\n"%(T, popt[0], popt[0]))
-        y_pred = [function_1G(i,*popt) for i in x]
+    # if T < 195:
+    #     popt, pcov = curve_fit(function, x, y, bounds=([8, 8.5, 0.1, 0.1, 1000, 1000], [9, 9.5, 0.5, 0.5, 5000, 5000]))
+    #     ffit.write("%d    %f  %f\n"%(T, popt[0], popt[1]))
+    #     y_pred = [function(i,*popt) for i in x]
+    # else:
+    popt, pcov = curve_fit(function_1G, x, y, bounds=([8, 0.1, 1000], [9.5, 0.5, 5000]))
+    ffit.write("%d    %f  %f\n"%(T, popt[0], popt[0]))
+    y_pred = [function_1G(i,*popt) for i in x]
     print(popt)
     plt.scatter(x,y_pred,marker="s")
     

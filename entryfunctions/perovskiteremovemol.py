@@ -2,10 +2,12 @@ from copy import deepcopy
 import dpdata
 # from pymatgen.core.operations import SymmOp
 import numpy as np
-import sys
+import sys,os
 import time
 from itertools import combinations
 
+SCRIPT_DIR = "/data/FAPbI3/phasediagram-md/batch2-2conf/cubic/perovskitepack"
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 from perovskitelattpack import *
 
 if __name__ == "__main__":
@@ -45,9 +47,9 @@ if __name__ == "__main__":
     
         try:
             indices_mol = np.load("indices_mol.npy")
-            cubic.extract_mol_from_indices(indices_mol, moltype="MA")
+            cubic.extract_mol_from_indices(indices_mol, moltype="FA")
         except:
-            indices_mol = cubic.extract_mol(moltype = "MA")
+            indices_mol = cubic.extract_mol(moltype = "FA")
             np.save("indices_mol.npy", indices_mol)
 
         mesh_dim = [4,4,4]
