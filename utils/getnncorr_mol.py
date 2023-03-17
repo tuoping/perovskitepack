@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 
-def molecular_order_parameter_by_mesh(mesh_dim, mesh, mollist, polarized=False):
+def molecular_order_parameter_by_mesh(mesh_dim, mesh, mollist, polarized=False, is2d=False):
     mesh = mesh.T
     vecdot_x = 0.0
     vecdot_y = 0.0
@@ -60,43 +60,52 @@ def molecular_order_parameter_by_mesh(mesh_dim, mesh, mollist, polarized=False):
         
         assert(len(xnlist)==2)
         assert(len(ynlist)==2)
-        assert(len(znlist)==2)
+        if not is2d:
+            assert(len(znlist)==2)
         
         assert(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[0]]))-1.0 < 1e-6)
         assert(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[0]]))-1.0 < 1e-6)
-        assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]]))-1.0 < 1e-6)
         assert(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[1]]))-1.0 < 1e-6)
         assert(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[1]]))-1.0 < 1e-6)
-        assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]]))-1.0 < 1e-6)
+        if not is2d:
+            assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]]))-1.0 < 1e-6)
+            assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]]))-1.0 < 1e-6)
         if polarized:
             corr_x += math.acos(min((np.dot(mollist[idx_mol], mollist[xnlist[0]])),1.0))
             corr_y += math.acos(min((np.dot(mollist[idx_mol], mollist[ynlist[0]])),1.0))
-            corr_z += math.acos(min((np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
             corr_x += math.acos(min((np.dot(mollist[idx_mol], mollist[xnlist[1]])),1.0))
             corr_y += math.acos(min((np.dot(mollist[idx_mol], mollist[ynlist[1]])),1.0))
-            corr_z += math.acos(min((np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
+            if not is2d:
+                corr_z += math.acos(min((np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
+                corr_z += math.acos(min((np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
             vecdot_x += (min((np.dot(mollist[idx_mol], mollist[xnlist[0]])),1.0))
             vecdot_y += (min((np.dot(mollist[idx_mol], mollist[ynlist[0]])),1.0))
-            vecdot_z += (min((np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
             vecdot_x += (min((np.dot(mollist[idx_mol], mollist[xnlist[1]])),1.0))
             vecdot_y += (min((np.dot(mollist[idx_mol], mollist[ynlist[1]])),1.0))
-            vecdot_z += (min((np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
+            if not is2d:
+                vecdot_z += (min((np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
+                vecdot_z += (min((np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
         else:
             corr_x += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[0]])),1.0))
             corr_y += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[0]])),1.0))
-            corr_z += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
             corr_x += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[1]])),1.0))
             corr_y += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[1]])),1.0))
-            corr_z += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
+            if not is2d:
+                corr_z += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
+                corr_z += math.acos(min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
             vecdot_x += (min(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[0]])),1.0))
             vecdot_y += (min(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[0]])),1.0))
-            vecdot_z += (min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
             vecdot_x += (min(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[1]])),1.0))
             vecdot_y += (min(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[1]])),1.0))
-            vecdot_z += (min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
+            if not is2d:
+                vecdot_z += (min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]])),1.0))
+                vecdot_z += (min(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]])),1.0))
           
     # print(vecdot_x, vecdot_y, vecdot_z)
-    return corr_x/2/math.pi/len(mollist), corr_y/2/math.pi/len(mollist), corr_z/2/math.pi/len(mollist)
+    if not is2d:
+        return corr_x/2/math.pi/len(mollist), corr_y/2/math.pi/len(mollist), corr_z/2/math.pi/len(mollist)
+    else:
+        return corr_x/2/math.pi/len(mollist), corr_y/2/math.pi/len(mollist)
 
 
 if __name__ == "__main__":
@@ -107,18 +116,17 @@ if __name__ == "__main__":
     #print(axis)
     
     caxis = int(np.loadtxt("caxis"))
-    mesh_dim = [8,8,4]
+    mesh_dim = [32,32,2]
     for i_frame in range(1):
     
-        Totaltime = 100
         Num_mol = mesh_dim[0]*mesh_dim[1]*mesh_dim[2]
     
-        _data = np.loadtxt(dirname+"/mol_longaxis_frame"+str(i_frame), skiprows=0)
+        _data = np.loadtxt(dirname+"/mol_polaraxis_frame"+str(i_frame), skiprows=0)
         data = _data
     
         data = np.reshape(data, [-1, Num_mol, 3])
         Totaltime = len(data)
-        #print("Totaltime = ", Totaltime)
+        print("Totaltime = ", Totaltime)
     
         rot = np.zeros([3,3])
         rot[0][(caxis+1)%3] = 1
@@ -127,13 +135,13 @@ if __name__ == "__main__":
         for m in range(Totaltime):
             mesh = np.zeros([Num_mol,3])
             idx = 0
-            for i in range(8):
-                for j in range(8):
-                    for k in range(4):
+            for i in range(mesh_dim[0]):
+                for j in range(mesh_dim[1]):
+                    for k in range(mesh_dim[2]):
                         data[m][idx] = rot@data[m][idx]
                         mesh[idx][0] = i
                         mesh[idx][1] = j
                         mesh[idx][2] = k
                         idx += 1
-            corr = molecular_order_parameter_by_mesh(mesh_dim, mesh, data[m])
+            corr = molecular_order_parameter_by_mesh(mesh_dim, mesh, data[m], is2d=True)
             print(corr)

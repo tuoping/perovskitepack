@@ -44,10 +44,10 @@ def apply_pbc(dx,cell):
 
 def phys2Inter(dx, cell):
     invcell = np.linalg.inv(cell)
-    return np.matmul(dx, invcell)
+    return np.matmul(invcell, dx)
 
 def Inter2phys(rdx, cell):
-    return np.matmul(rdx, cell)
+    return np.matmul(cell, rdx)
     
 
 def distance(x1, x2, cell):
@@ -211,7 +211,7 @@ class mesh_point(object):
 
     def set_obj(self, obj:object, c, i):
         if self.obj is not None:
-            print(self.coord, c, self.obj.center_coord)
+            print(self.coord, self.obj.center_coord, i, c)
             # raise Exception("mesh_point already occupied")
             return False
         self.obj = obj
@@ -249,79 +249,76 @@ class Mesh(object):
         
     def map_coord_mesh(self, coord):
         mesh_point_list = []
-        c_list = coord[np.newaxis,:] +[[self.eps, 0, 0]]
-        c_list = coord[np.newaxis,:] +[[0, 0, 0]]
-        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, 0, 0]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[0, self.eps, 0]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[ 0,-self.eps, 0]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[0, 0, self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[0, 0,-self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[0,  self.eps, self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[0, -self.eps,-self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[0,  self.eps,-self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[0, -self.eps, self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, -self.eps, 0]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, self.eps, 0]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, self.eps, 0]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, -self.eps, 0]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, self.eps, self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, -self.eps, -self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, -self.eps, -self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, -self.eps, self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, self.eps, -self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[-self.eps, self.eps, self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, -self.eps, self.eps]]))
-        c_list = np.vstack((coord[np.newaxis,:] +[[self.eps, self.eps, -self.eps]]))
+        c_list = np.vstack((coord[np.newaxis,:] +[[0, 0, 0]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[-self.eps, 0, 0]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[0, self.eps, 0]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[ 0,-self.eps, 0]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[0, 0, self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[0, 0,-self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[0,  self.eps, self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[0, -self.eps,-self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[0,  self.eps,-self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[0, -self.eps, self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[self.eps, -self.eps, 0]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[-self.eps, self.eps, 0]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[self.eps, self.eps, 0]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[-self.eps, -self.eps, 0]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[self.eps, self.eps, self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[-self.eps, -self.eps, -self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[self.eps, -self.eps, -self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[-self.eps, -self.eps, self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[-self.eps, self.eps, -self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[-self.eps, self.eps, self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[self.eps, -self.eps, self.eps]]))
+        c_list = np.vstack((c_list,coord[np.newaxis,:] +[[self.eps, self.eps, -self.eps]]))
         for c in c_list:
             icoord = phys2Inter(c, self.cell)
-            x = int(icoord[0])
-            y = int(icoord[1])
-            z = int(icoord[2])
+            x = int(np.floor(icoord[0]))
+            y = int(np.floor(icoord[1]))
+            z = int(np.floor(icoord[2]))
             _x,_y,_z = self._pbc_mesh_coord(x,y,z)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x+1,y,z)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x,y+1,z)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x,y,z+1)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x-1,y,z)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x,y-1,z)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x,y,z-1)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x+1,y+1,z)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x,y+1,z+1)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x+1,y,z+1)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x-1,y-1,z)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x,y-1,z-1)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x-1,y,z-1)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x-1,y-1,z-1)
-            mesh_point_list.append(self.mesh[_x][_y][_z])
-            _x,_y,_z = self._pbc_mesh_coord(x+1,y+1,z+1)
             mesh_point_list.append(self.mesh[_x][_y][_z])
         return mesh_point_list, c_list
 
     def map_obj_mesh(self, obj):
+        coord_list = []
+        cart_coord_list = []
         for i in range(len(obj)):
-            c = obj[i].center_coord
-            mesh_point_list, c_list = self.map_coord_mesh(c)
-            for idx_c in range(len(c_list)):
-                for idx_mesh, mesh_point in enumerate(mesh_point_list):
-                    Succeed = mesh_point.set_obj(obj[i], c_list[idx_c],i)
-                    if Succeed:
-                        break
-                if Succeed:
-                    break
-            if not Succeed:
-                return False
+            direct_coord = phys2Inter(obj[i].center_coord, self.cell)
+            x = np.floor(direct_coord[0])
+            y = np.floor(direct_coord[1])
+            z = np.floor(direct_coord[2])
+            _x,_y,_z = self._pbc_mesh_coord(x,y,z)
+            # print(obj[i].center_coord, direct_coord, [x,y,z], [_x,_y,_z])
+            icoord = np.array([_x,_y,_z])
+            coord_list.append(icoord)
+            cart_coord_list.append(obj[i].center_coord)
+        coord_list = np.array(coord_list)
+        order = np.lexsort([coord_list[:,2], coord_list[:,1], coord_list[:,0]])
+        order_mesh = np.reshape(order, self.mesh_size)
+        print(self.mesh_size)
+        for i in range(self.mesh_size[0]):
+            for j in range(self.mesh_size[1]):
+                for k in range(self.mesh_size[2]):
+                    print(i,j,k,order_mesh[i][j][k], cart_coord_list[order_mesh[i][j][k]], coord_list[order_mesh[i][j][k]])
+                    mesh_point = self.mesh[i][j][k]
+                    Succeed = mesh_point.set_obj(obj[order_mesh[i][j][k]], cart_coord_list[order_mesh[i][j][k]], order_mesh[i][j][k])
+                    if not Succeed:
+                        return False
+        # raise Exception("PAUSE")
+        # for i in range(len(obj)):
+        #     c = obj[i].center_coord
+        #     mesh_point_list, c_list = self.map_coord_mesh(c)
+        #     print("mapped mesh::",c, mesh_point_list[0].coord)
+        #     for idx_c in range(len(c_list)):
+        #         for idx_mesh, mesh_point in enumerate(mesh_point_list):
+        #             Succeed = mesh_point.set_obj(obj[i], c_list[idx_c],i)
+        #             if Succeed:
+        #                 break
+        #         if Succeed:
+        #             break
+        #     if not Succeed:
+        #         return False
         self.output_mesh()
         return True
 
@@ -331,7 +328,9 @@ class Mesh(object):
             j = int(objmesh[m][1])
             k = int(objmesh[m][2])
             i_obj = int(objmesh[m][3])
-            self.mesh[i][j][k].set_obj(obj[i_obj], obj[i_obj].center_coord, i_obj)
+            Succeed = self.mesh[i][j][k].set_obj(obj[i_obj], obj[i_obj].center_coord, i_obj)
+            if not Succeed:
+                raise Exception("Fail to set_obj:: ", i_obj, i,j,k)
 
     def output_mesh(self):
         foutput = open("objmesh.dat", "w")
@@ -367,13 +366,13 @@ class Molecule(object):
         assert len(coord) == 3, "Pb coord must be a list of 3 numbers"
         self.center_coord = coord
 
-    def angle_longaxis(self, axis=[0,0,1]):
+    def set_angle_longaxis(self, axis=[0,0,1]):
         self.angle_longaxis = []
         self.angle_longaxis.append( math.acos(np.abs(np.dot(self.unitlongaxis, axis[0])/(np.linalg.norm(axis[0])))))
         self.angle_longaxis.append( math.acos(np.abs(np.dot(self.unitlongaxis, axis[1])/(np.linalg.norm(axis[1])))))
         self.angle_longaxis.append( math.acos(np.abs(np.dot(self.unitlongaxis, axis[2])/(np.linalg.norm(axis[2])))))
 
-    def angle_polaraxis(self, axis=[0,0,1]):
+    def set_angle_polaraxis(self, axis=[0,0,1]):
         self.angle_polaraxis = []
         self.angle_polaraxis.append( math.acos(np.dot(self.unitpolaraxis, axis[0])/(np.linalg.norm(axis[0]))))
         self.angle_polaraxis.append( math.acos(np.dot(self.unitpolaraxis, axis[1])/(np.linalg.norm(axis[1]))))
@@ -524,8 +523,8 @@ class FAPbI3(object):
                 molecule = Molecule(indices, coords, cell)
                 molecule.set_longaxis(nvecNN, dNN)
                 molecule.set_polaraxis(nvecCN, dCN)
-                molecule.angle_longaxis(self.axis)
-                molecule.angle_polaraxis(self.axis)
+                molecule.set_angle_longaxis(self.axis)
+                molecule.set_angle_polaraxis(self.axis)
                 self.molecules.append(molecule)
             elif moltype == "MA":
                 coords = self.cubic["coords"][0][indices]
@@ -538,8 +537,8 @@ class FAPbI3(object):
                 molecule = Molecule(indices, coords, cell)
                 #molecule.set_longaxis(nvecNN, dNN)
                 molecule.set_polaraxis(nvecCN, dCN)
-                #molecule.angle_longaxis(self.axis)
-                molecule.angle_polaraxis(self.axis)
+                #molecule.set_angle_longaxis(self.axis)
+                molecule.set_angle_polaraxis(self.axis)
                 molecule.set_center_postion(cCN)
                 self.molecules.append(molecule)
             else:
@@ -616,8 +615,8 @@ class FAPbI3(object):
                 molecule = Molecule(indices, coords, cell)
                 molecule.set_longaxis(nvecNN, dNN)
                 molecule.set_polaraxis(nvecCN, dCN)
-                molecule.angle_longaxis(self.axis)
-                molecule.angle_polaraxis(self.axis)
+                molecule.set_angle_longaxis(self.axis)
+                molecule.set_angle_polaraxis(self.axis)
                 self.molecules.append(molecule)
                 # etime = time.time()
                 # print("calculate vector: ", etime-stime)
@@ -682,8 +681,8 @@ class FAPbI3(object):
                 molecule = Molecule(indices, coords, cell)
                 #molecule.set_longaxis(nvecNN, dNN)
                 molecule.set_polaraxis(nvecCN, dCN)
-                #molecule.angle_longaxis(self.axis)
-                molecule.angle_polaraxis(self.axis)
+                #molecule.set_angle_longaxis(self.axis)
+                molecule.set_angle_polaraxis(self.axis)
                 molecule.set_center_postion(cCN)
                 self.molecules.append(molecule)
                 # etime = time.time()

@@ -4,7 +4,8 @@ import dpdata
 import numpy as np
 import sys
 import time
-
+lib_path="/home/tuoping/MAPbI3/phasediagram/cubic-natom24576sc16162-confparallel/perovskitepack"
+sys.path.append(lib_path)
 from perovskitelattpack import *
 
 if __name__ == "__main__":
@@ -43,35 +44,37 @@ if __name__ == "__main__":
     
         try:
             indices_mol = np.load("indices_mol.npy")
-            cubic.extract_mol_from_indices(indices_mol)
+            cubic.extract_mol_from_indices(indices_mol, moltype="MA")
         except:
-            indices_mol = cubic.extract_mol()
+            indices_mol = cubic.extract_mol(moltype="MA")
             np.save("indices_mol.npy", indices_mol)
         
         # start a mesh
         ### map molecules to mesh
+        mesh_dim = [2,32,32]
         try:
-            molmesh = np.loadtxt("molmesh.dat")   
-            size = molmesh.shape[0]
-            length = int(math.pow(size/2, 1/2))
-            mesh_dim = [length, length, 2]
-            cubic.startmesh(mesh_dim, eps=2.0) 
+            molmesh = np.loadtxt("objmesh.dat")   
+            cubic.startmesh(mesh_dim, eps=0.0) 
             cubic.mesh.read_obj_mesh(molmesh, cubic.molecules)
         except:
-            mesh_dim = [60,60,2]
-            cubic.startmesh(mesh_dim, eps=2.0) 
+            cubic.startmesh(mesh_dim, eps=0.0) 
             Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
             if not Succeed:
                 cubic.startmesh(mesh_dim, eps=-2.0) 
                 Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
                 if not Succeed:
-                    raise Exception("mapping failed")
+                    cubic.startmesh(mesh_dim, eps=2.0) 
+                    Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+                    if not Succeed:
+                        raise Exception("mapping failed")
 
         ### Output coordinates & molecule vectors
         num = cubic.mesh.mesh_size
         mesh = cubic.mesh
-        ofs = open("mol_shortaxis_frame"+str(i_frame), "w")
-        ofsa = open("mol_shortaxis_angle_frame"+str(i_frame), "w")
+        # ofl = open("mol_longaxis_frame"+str(i_frame), "w")
+        ofs = open("mol_polaraxis_frame"+str(i_frame), "w")
+        # ofla = open("mol_longaxis_angle_frame"+str(i_frame), "w")
+        ofsa = open("mol_polaraxis_angle_frame"+str(i_frame), "w")
         ofc = open("mol_center_coords_frame"+str(i_frame), "w")
        
         for i in range(num[0]):
@@ -81,11 +84,15 @@ if __name__ == "__main__":
                     # center = mesh.mesh[i][j][k]
                     ofc.write("%f %f %f\n"%(center.obj.center_coord[0], center.obj.center_coord[1], center.obj.center_coord[2]))
                     
+                    # ofl.write("%f %f %f\n"%((center.obj.unitlongaxis[0], center.obj.unitlongaxis[1], center.obj.unitlongaxis[2])))
                     ofs.write("%f %f %f\n"%(center.obj.unitpolaraxis[0], center.obj.unitpolaraxis[1], center.obj.unitpolaraxis[2]))
     
+                    # ofla.write("%f %f %f\n"%((math.degrees(center.obj.angle_longaxis[0]), math.degrees(center.obj.angle_longaxis[1]), math.degrees(center.obj.angle_longaxis[2]))))
                     ofsa.write("%f %f %f\n"%(math.degrees(center.obj.angle_polaraxis[0]), math.degrees(center.obj.angle_polaraxis[1]), math.degrees(center.obj.angle_polaraxis[2])))
         
+        # ofl.close()
         ofs.close()
+        # ofla.close()
         ofsa.close()
         ofc.close()
         etime = time.time()

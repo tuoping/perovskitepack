@@ -5,6 +5,8 @@ import numpy as np
 import sys
 import time
 
+lib_path="/home/tuoping/MAPbI3/phasediagram/cubic-natom24576sc16162-confparallel/perovskitepack"
+sys.path.append(lib_path)
 from perovskitelattpack import *
 
 if __name__ == "__main__":
@@ -43,29 +45,28 @@ if __name__ == "__main__":
     
         try:
             indices_mol = np.load("indices_mol.npy")
-            cubic.extract_mol_from_indices(indices_mol)
+            cubic.extract_mol_from_indices(indices_mol, moltype="MA")
         except:
-            indices_mol = cubic.extract_mol()
+            indices_mol = cubic.extract_mol(moltype="MA")
             np.save("indices_mol.npy", indices_mol)
         
         # start a mesh
         ### map molecules to mesh
-        try:
-            objmesh = np.loadtxt("objmesh.dat")   
-            size = objmesh.shape[0]
-            length = int(math.pow(size/2, 1/2))
-            mesh_dim = [length, length, 2]
-            cubic.startmesh(mesh_dim, eps=2.0) 
-            cubic.mesh.read_obj_mesh(objmesh, cubic.molecules)
-        except:
-            mesh_dim = [60,60,2]
-            cubic.startmesh(mesh_dim, eps=2.0) 
-            Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
-            if not Succeed:
-                cubic.startmesh(mesh_dim, eps=-2.0) 
-                Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
-                if not Succeed:
-                    raise Exception("mapping failed")
+        mesh_dim=[2,32,32]
+        # try:
+        print("LOADING objmesh>>>>>>")
+        objmesh = np.loadtxt("objmesh.dat")   
+        cubic.startmesh(mesh_dim, eps=0.0) 
+        cubic.mesh.read_obj_mesh(objmesh, cubic.molecules)
+        print("LOADING objmesh DONE !!!")
+        # except:
+        #     cubic.startmesh(mesh_dim, eps=2.0) 
+        #     Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+        #     if not Succeed:
+        #         cubic.startmesh(mesh_dim, eps=-2.0) 
+        #         Succeed = cubic.mesh.map_obj_mesh(cubic.molecules)
+        #         if not Succeed:
+        #             raise Exception("mapping failed")
         ### Output format.dump
         phi_list = np.load("phi_list_frame"+str(i_frame)+".npy")
     
