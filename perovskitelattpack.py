@@ -2,6 +2,7 @@ from copy import deepcopy
 from token import TYPE_COMMENT
 import dpdata
 from dpdata.lammps.lmp import box2lmpbox
+from dpdata.lammps.dump import box2dumpbox
 from pymatgen.core.operations import SymmOp
 import numpy as np
 from numpy.linalg import norm
@@ -10,6 +11,7 @@ import sys, os
 import datetime
 from collections import Counter
 import time
+from ase.geometry.geometry import get_distances
 
 def bubble_sortby_ii(alist,ii):
     length = len(alist)
@@ -25,42 +27,6 @@ def bubble_sortby_ii(alist,ii):
                 order[j] = deepcopy(intt)
     return order
 
-
-def apply_pbc(dx,cell):
-    rdx=[np.mod(dx[0],1.0),np.mod(dx[1],1.0),np.mod(dx[2],1.0)]
-    if(rdx[0]<-0.5):
-        rdx[0]=rdx[0]+1.0
-    if(rdx[1]<-0.5):
-        rdx[1]=rdx[1]+1.0
-    if(rdx[2]<-0.5):
-        rdx[2]=rdx[2]+1.0
-    if(rdx[0]>0.5):
-        rdx[0]=rdx[0]-1.0
-    if(rdx[1]>0.5):
-        rdx[1]=rdx[1]-1.0
-    if(rdx[2]>0.5):
-        rdx[2]=rdx[2]-1.0
-    return np.array(rdx)
-
-def phys2Inter(dx, cell):
-    invcell = np.linalg.inv(cell)
-    return np.matmul(invcell, dx)
-
-def Inter2phys(rdx, cell):
-    return np.matmul(cell, rdx)
-    
-
-def distance(x1, x2, cell):
-    physd = x2-x1
-    interd = phys2Inter(physd, cell)
-    rinterd = apply_pbc(interd, cell)
-    d = Inter2phys(rinterd, cell)
-    return d
-
-def center(x1, x2, cell):
-    d = distance(x1, x2, cell)
-    center = x1+d/2
-    return center
 
 def write_vasp_poscar(cell, elem_type, elem_num, coords, filename="POSCAR"):
     fconf = open(filename, "w")
@@ -305,20 +271,6 @@ class Mesh(object):
                     Succeed = mesh_point.set_obj(obj[order_mesh[i][j][k]], cart_coord_list[order_mesh[i][j][k]], order_mesh[i][j][k])
                     if not Succeed:
                         return False
-        # raise Exception("PAUSE")
-        # for i in range(len(obj)):
-        #     c = obj[i].center_coord
-        #     mesh_point_list, c_list = self.map_coord_mesh(c)
-        #     print("mapped mesh::",c, mesh_point_list[0].coord)
-        #     for idx_c in range(len(c_list)):
-        #         for idx_mesh, mesh_point in enumerate(mesh_point_list):
-        #             Succeed = mesh_point.set_obj(obj[i], c_list[idx_c],i)
-        #             if Succeed:
-        #                 break
-        #         if Succeed:
-        #             break
-        #     if not Succeed:
-        #         return False
         self.output_mesh()
         return True
 
@@ -413,7 +365,8 @@ class Molecule(object):
 
 class FAPbI3(object):
 
-    def __init__(self, filename, fmt="lammps/dump", type_map=["I","Pb","C","N","H"]):
+    def __init__(self, filename, fmt="lammps/dump", type_map=["I","Pb","C","N","H"], _name=None):
+        self._name = _name
         self.setcutoff_CN_H()
         self.setcutoff_I_Pb()
         self.mols = []
@@ -441,6 +394,7 @@ class FAPbI3(object):
         self.types_6types["Ha"] = 5
         self.set_axis()
 
+
     def _from_file(self, filename, fmt, type_map):
         if fmt == "lammps/lmp":
             self.cubic = dpdata.System(filename, "lammps/lmp")
@@ -465,15 +419,13 @@ class FAPbI3(object):
         if fmt == "lammps/lmp":
             for idx,elem_type in enumerate(type_map):
                 self.cubic["atom_names"][idx] = elem_type
-        else:
-            if fmt == "lammps/dump":
-                for idx,elem_type in enumerate(type_map):
+        elif fmt == "lammps/dump":
+            for idx,elem_type in enumerate(type_map):
                     self.cubic["atom_names"][idx] = elem_type
-            else:
-                if fmt == "vasp/poscar":
-                    pass
-                else:
-                    raise Exception("Unknown format")
+        elif fmt == "vasp/poscar":
+            pass
+        else:
+            raise Exception("Unknown format")
         for elem_type in type_map:
             self.types[elem_type] =  self.cubic["atom_names"].index(elem_type)
         assert self.cubic.get_nframes() == 1, print(self.cubic.get_nframes())
@@ -810,20 +762,22 @@ class FAPbI3(object):
         # indices_oct = []
         self.octahedra = []
         indices_octahedra = []
+        distances_PbI = get_distances(coords_Pb, coords_I, cell, pbc=True)
+
         for idx_Pb,Pb in enumerate(coords_Pb):
             indices = []
             indices.append(list_Pb[0][idx_Pb])
             coords = []
             coords.append(Pb)
             # Find I bonded to Pb
-            for idx_I,I in enumerate(coords_I):
+            for idx_I,d in enumerate(distances_PbI[1][idx_Pb]):
+                I = coords_I[idx_I]
                 # if len(indices) == 6:
                 #     break
-                d = np.linalg.norm(distance(I, Pb, cell))
                 if d < self.cutoff_I_Pb:
                     coords.append(I)
                     indices.append(list_I[0][idx_I])
-            assert len(indices) == 7, print(np.array(indices)+1) 
+            # assert len(indices) == 7, print(np.array(indices)+1) 
             idx += 1
 
             oct = Octahedron(indices, coords, cell)
@@ -834,16 +788,16 @@ class FAPbI3(object):
             indices_octahedra.append(indices)
         return indices_octahedra
     
-    def dump_lammps_lmp(outfilename = "formated.lmp", formlist = None):
+    def dump_lammps_lmp(self, outfilename = "formated.lmp", formlist = None):
         fdump = open(outfilename, "w")
         fdump.write("Formated\n")
         fdump.write("%d atoms\n"%(self.cubic.get_natoms()))
         fdump.write("%d atom types\n"%(len(self.cubic["atom_names"])))
         lohi,tilt=box2lmpbox(self.cubic["orig"],self.cubic["cells"][0])
-        fconf.write("%f %f xlo xhi\n"%(lohi[0][0], lohi[0][1]))
-        fconf.write("%f %f ylo yhi\n"%(lohi[1][0], lohi[1][1]))
-        fconf.write("%f %f zlo zhi\n"%(lohi[2][0], lohi[2][1]))
-        fconf.write("%f %f %f xy xz yz\n"%(tilt[0], tilt[1], tilt[2]))
+        fdump.write("%f %f xlo xhi\n"%(lohi[0][0], lohi[0][1]))
+        fdump.write("%f %f ylo yhi\n"%(lohi[1][0], lohi[1][1]))
+        fdump.write("%f %f zlo zhi\n"%(lohi[2][0], lohi[2][1]))
+        fdump.write("%f %f %f xy xz yz\n"%(tilt[0], tilt[1], tilt[2]))
         fdump.write("\n")
         fdump.write("Atoms\n")
         fdump.write("\n")
@@ -852,7 +806,7 @@ class FAPbI3(object):
                 fdump.write("%d %d  %f %f %f\n"%(i+1,self.cubic["atom_types"][i]+1, self.cubic["coords"][0][i][0], self.cubic["coords"][0][i][1], self.cubic["coords"][0][i][2]))
         else:
             for i in range(sum(self.cubic["atom_numbs"])):
-                fdump.write("%d %d  %f %f %f %f # %s\n"%(i+1,self.cubic["atom_types"][i]+1, self.cubic["coords"][0][i][0], self.cubic["coords"][0][i][1], self.cubic["coords"][0][i][2], formlist[i]))
+                fdump.write("%d %d  %f %f %f %f\n"%(i+1,self.cubic["atom_types"][i]+1, self.cubic["coords"][0][i][0], self.cubic["coords"][0][i][1], self.cubic["coords"][0][i][2], formlist[i]))
         fdump.close()
 
     
@@ -863,17 +817,19 @@ class FAPbI3(object):
         fdump.write("ITEM: NUMBER OF ATOMS\n")
         fdump.write("%d\n"%(self.cubic.get_natoms()))
         fdump.write("ITEM: BOX BOUNDS xy xz yz pp pp pp\n")
-        lohi,tilt=box2lmpbox(self.cubic["orig"],self.cubic["cells"][0])
+        lohi,tilt=box2dumpbox(self.cubic["orig"],self.cubic["cells"][0])
         fdump.write("%f %f %f  xlo xhi xy\n"%(lohi[0][0], lohi[0][1], tilt[0]))
         fdump.write("%f %f %f  ylo yhi xz\n"%(lohi[1][0], lohi[1][1], tilt[1]))
         fdump.write("%f %f %f  zlo zhi yz\n"%(lohi[2][0], lohi[2][1], tilt[2]))
-        fdump.write("ITEM: ATOMS id type x y z format\n")
+        
         if formlist is None:
+            fdump.write("ITEM: ATOMS id type x y z\n")
             for i in range(sum(self.cubic["atom_numbs"])):
                 fdump.write("%d %d  %f %f %f\n"%(i+1,self.cubic["atom_types"][i]+1, self.cubic["coords"][0][i][0], self.cubic["coords"][0][i][1], self.cubic["coords"][0][i][2]))
         else:
+            fdump.write("ITEM: ATOMS id type x y z format\n")
             for i in range(sum(self.cubic["atom_numbs"])):
-                fdump.write("%d %d  %f %f %f  %f \n"%(i+1,self.cubic["atom_types"][i]+1, self.cubic["coords"][0][i][0], self.cubic["coords"][0][i][1], self.cubic["coords"][0][i][2], formlist[i]))
+                fdump.write("%d %d  %f %f %f %f\n"%(i+1,self.cubic["atom_types"][i]+1, self.cubic["coords"][0][i][0], self.cubic["coords"][0][i][1], self.cubic["coords"][0][i][2], formlist[i]))
         fdump.close()
 
 
