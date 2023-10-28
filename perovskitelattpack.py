@@ -28,6 +28,42 @@ def bubble_sortby_ii(alist,ii):
     return order
 
 
+def apply_pbc(dx,cell):
+    rdx=[np.mod(dx[0],1.0),np.mod(dx[1],1.0),np.mod(dx[2],1.0)]
+    if(rdx[0]<-0.5):
+        rdx[0]=rdx[0]+1.0
+    if(rdx[1]<-0.5):
+        rdx[1]=rdx[1]+1.0
+    if(rdx[2]<-0.5):
+        rdx[2]=rdx[2]+1.0
+    if(rdx[0]>0.5):
+        rdx[0]=rdx[0]-1.0
+    if(rdx[1]>0.5):
+        rdx[1]=rdx[1]-1.0
+    if(rdx[2]>0.5):
+        rdx[2]=rdx[2]-1.0
+    return np.array(rdx)
+
+def phys2Inter(dx, cell):
+    invcell = np.linalg.inv(cell)
+    return np.matmul(invcell, dx)
+
+def Inter2phys(rdx, cell):
+    return np.matmul(cell, rdx)
+    
+
+def distance(x1, x2, cell):
+    physd = x2-x1
+    interd = phys2Inter(physd, cell)
+    rinterd = apply_pbc(interd, cell)
+    d = Inter2phys(rinterd, cell)
+    return d
+
+def center(x1, x2, cell):
+    d = distance(x1, x2, cell)
+    center = x1+d/2
+    return center
+
 def write_vasp_poscar(cell, elem_type, elem_num, coords, filename="POSCAR"):
     fconf = open(filename, "w")
     fconf.write("{:<5s}".format("VASP") + "\n")
