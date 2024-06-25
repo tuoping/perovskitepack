@@ -43,11 +43,11 @@ if __name__ == "__main__":
     mesh_dim = [4,4,4]
     cubic.startmesh(mesh_dim, eps=0.0) 
     
-    cubic.extract_mol(moltype="MA")
-    #f = open("molecule_longaxis.dat", "w")
-    #for mol in cubic.molecules:
-    #    f.write("%f %f %f\n"%(math.degrees(mol.angle_longaxis[0]), math.degrees(mol.angle_longaxis[1]), math.degrees(mol.angle_longaxis[2])))
-    #f.close()
+    cubic.extract_mol()
+    f = open("molecule_longaxis.dat", "w")
+    for mol in cubic.molecules:
+        f.write("%f %f %f\n"%(math.degrees(mol.angle_longaxis[0]), math.degrees(mol.angle_longaxis[1]), math.degrees(mol.angle_longaxis[2])))
+    f.close()
 
     f = open("molecule_polaraxis.dat", "w")
     for mol in cubic.molecules:
