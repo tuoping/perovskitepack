@@ -25,13 +25,12 @@ if __name__ == "__main__":
             else:
                 raise Exception("Unknown file format")
     traj = dpdata.System(filename)
-    for i_frame in range(18,traj.get_nframes()):
-        print("Frame:: ", i_frame)
+    for i_frame in range(91,traj.get_nframes()):
         frm = traj[i_frame]
         cubic = FAPbI3(frm, fmt=fmt)
         
         # set axis according to "caxis"
-        # caxis = int(np.loadtxt("caxis")) # default caxis=2
+        # caxis = int(np.loadtxt("caxis"))
         # ref_axis = np.eye(3)
         axis = np.eye(3)
         # axis[2]=ref_axis[caxis]
@@ -47,7 +46,6 @@ if __name__ == "__main__":
         mesh_dim = [4,4,4]
         cubic.startmesh(mesh_dim, eps=0.0) 
         
-    
         try:
             indices_mol = np.load("indices_mol.npy")
             cubic.extract_mol_from_indices(indices_mol, moltype="FA")
@@ -55,13 +53,13 @@ if __name__ == "__main__":
             indices_mol = cubic.extract_mol(moltype="FA")
             np.save("indices_mol.npy", indices_mol)
         
-        f = open(f"molecule_longaxis_frame{i_frame}.dat", "w")
+        f = open(f"molecule_unitlongaxis_frame{i_frame}.dat", "w")
         for mol in cubic.molecules:
-            f.write("%f %f %f\n"%(math.degrees(mol.angle_longaxis[0]), math.degrees(mol.angle_longaxis[1]), math.degrees(mol.angle_longaxis[2])))
+            f.write("%f %f %f\n"%(math.degrees(mol.unitlongaxis[0]), math.degrees(mol.unitlongaxis[1]), math.degrees(mol.unitlongaxis[2])))
         f.close()
     
-        f = open(f"molecule_polaraxis_frame{i_frame}.dat", "w")
+        f = open(f"molecule_unitpolaraxis_frame{i_frame}.dat", "w")
         for mol in cubic.molecules:
-            f.write("%f %f %f\n"%(math.degrees(mol.angle_polaraxis[0]), math.degrees(mol.angle_polaraxis[1]), math.degrees(mol.angle_polaraxis[2])))
+            f.write("%f %f %f\n"%(math.degrees(mol.unitpolaraxis[0]), math.degrees(mol.unitpolaraxis[1]), math.degrees(mol.unitpolaraxis[2])))
         f.close()
         
