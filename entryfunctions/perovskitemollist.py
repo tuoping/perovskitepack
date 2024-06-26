@@ -25,7 +25,7 @@ if __name__ == "__main__":
             else:
                 raise Exception("Unknown file format")
     traj = dpdata.System(filename)
-    for i_frame in range(91,traj.get_nframes()):
+    for i_frame in range(traj.get_nframes()):
         frm = traj[i_frame]
         cubic = FAPbI3(frm, fmt=fmt)
         
@@ -55,11 +55,11 @@ if __name__ == "__main__":
         
         f = open(f"molecule_unitlongaxis_frame{i_frame}.dat", "w")
         for mol in cubic.molecules:
-            f.write("%f %f %f\n"%(math.degrees(mol.unitlongaxis[0]), math.degrees(mol.unitlongaxis[1]), math.degrees(mol.unitlongaxis[2])))
+            f.write("%f %f %f\n"%((mol.unitlongaxis[0]), (mol.unitlongaxis[1]), (mol.unitlongaxis[2])))
         f.close()
     
         f = open(f"molecule_unitpolaraxis_frame{i_frame}.dat", "w")
         for mol in cubic.molecules:
-            f.write("%f %f %f\n"%(math.degrees(mol.unitpolaraxis[0]), math.degrees(mol.unitpolaraxis[1]), math.degrees(mol.unitpolaraxis[2])))
+            f.write("%f %f %f\n"%((mol.unitpolaraxis[0]), (mol.unitpolaraxis[1]), (mol.unitpolaraxis[2])))
         f.close()
         
