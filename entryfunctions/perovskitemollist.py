@@ -24,33 +24,44 @@ if __name__ == "__main__":
                 fmt = "vasp/poscar"
             else:
                 raise Exception("Unknown file format")
-    cubic = FAPbI3(filename, fmt=fmt)
+    traj = dpdata.System(filename)
+    for i_frame in range(18,traj.get_nframes()):
+        print("Frame:: ", i_frame)
+        frm = traj[i_frame]
+        cubic = FAPbI3(frm, fmt=fmt)
+        
+        # set axis according to "caxis"
+        # caxis = int(np.loadtxt("caxis")) # default caxis=2
+        # ref_axis = np.eye(3)
+        axis = np.eye(3)
+        # axis[2]=ref_axis[caxis]
+        # axis[0]=ref_axis[(caxis+1)%3]
+        # axis[1]=np.cross(axis[0], axis[2])
+        cubic.set_axis(axis)
+        
+        # set cutoff of bonds
+        cubic.setcutoff_I_Pb(5.0)
+        cubic.setcutoff_CN_H()
     
-    # set axis according to "caxis"
-    caxis = int(np.loadtxt("caxis"))
-    ref_axis = np.eye(3)
-    axis = np.eye(3)
-    axis[2]=ref_axis[caxis]
-    axis[0]=ref_axis[(caxis+1)%3]
-    axis[1]=np.cross(axis[0], axis[2])
-    cubic.set_axis(axis)
+        # start a mesh
+        mesh_dim = [4,4,4]
+        cubic.startmesh(mesh_dim, eps=0.0) 
+        
     
-    # set cutoff of bonds
-    cubic.setcutoff_I_Pb(5.0)
-    cubic.setcutoff_CN_H(1.6)
-
-    # start a mesh
-    mesh_dim = [4,4,4]
-    cubic.startmesh(mesh_dim, eps=0.0) 
+        try:
+            indices_mol = np.load("indices_mol.npy")
+            cubic.extract_mol_from_indices(indices_mol, moltype="FA")
+        except:
+            indices_mol = cubic.extract_mol(moltype="FA")
+            np.save("indices_mol.npy", indices_mol)
+        
+        f = open(f"molecule_longaxis_frame{i_frame}.dat", "w")
+        for mol in cubic.molecules:
+            f.write("%f %f %f\n"%(math.degrees(mol.angle_longaxis[0]), math.degrees(mol.angle_longaxis[1]), math.degrees(mol.angle_longaxis[2])))
+        f.close()
     
-    cubic.extract_mol()
-    f = open("molecule_longaxis.dat", "w")
-    for mol in cubic.molecules:
-        f.write("%f %f %f\n"%(math.degrees(mol.angle_longaxis[0]), math.degrees(mol.angle_longaxis[1]), math.degrees(mol.angle_longaxis[2])))
-    f.close()
-
-    f = open("molecule_polaraxis.dat", "w")
-    for mol in cubic.molecules:
-        f.write("%f %f %f\n"%(math.degrees(mol.angle_polaraxis[0]), math.degrees(mol.angle_polaraxis[1]), math.degrees(mol.angle_polaraxis[2])))
-    f.close()
-    
+        f = open(f"molecule_polaraxis_frame{i_frame}.dat", "w")
+        for mol in cubic.molecules:
+            f.write("%f %f %f\n"%(math.degrees(mol.angle_polaraxis[0]), math.degrees(mol.angle_polaraxis[1]), math.degrees(mol.angle_polaraxis[2])))
+        f.close()
+        

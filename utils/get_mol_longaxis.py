@@ -6,31 +6,29 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 dirname = "./"
-caxis = int(np.loadtxt(dirname+"/caxis"))
-ref_axis = np.eye(3)
+# caxis = int(np.loadtxt(dirname+"/caxis"))
+# ref_axis = np.eye(3)
 axis = np.eye(3)
 print(axis)
 
-f1 = "mol_center_coords_frame0"
+# f1 = "mol_center_coords_frame0"
+# coord = np.loadtxt(f1, skiprows=0)
+# coord = coord.T
+# x = np.array(coord[(caxis+1)%3])
+# y = np.array(coord[(caxis+2)%3])
+# z = np.array(coord[caxis])
 
-coord = np.loadtxt(f1, skiprows=0)
-coord = coord.T
-
-mesh_size = [32,32,2]
-caxis = int(np.loadtxt("caxis"))
-x = np.array(coord[(caxis+1)%3])
-y = np.array(coord[(caxis+2)%3])
-z = np.array(coord[caxis])
+mesh_size = [4,4,4]
 # phi_list_all = []
 for i_frame in range(1):
 
     Totaltime = 100
     Num_mol = mesh_size[0]*mesh_size[1]*mesh_size[2]
-    _data = np.loadtxt(dirname+"/mol_polaraxis_frame"+str(i_frame), skiprows=0)
+    _data = np.loadtxt(dirname+"/mol_longaxis_frame"+str(i_frame), skiprows=0)
     data = _data
     data = np.reshape(data, [-1, Num_mol, 3])
     Totaltime = len(data)
-    print("Totaltime = ", Totaltime)
+    print("Num of molecules = ", Totaltime)
     mesh_starting_point = 0
     idx = 0
     while(True):

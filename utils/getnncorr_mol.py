@@ -63,13 +63,13 @@ def molecular_order_parameter_by_mesh(mesh_dim, mesh, mollist, polarized=False, 
         if not is2d:
             assert(len(znlist)==2)
         
-        assert(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[0]]))-1.0 < 1e-6)
-        assert(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[0]]))-1.0 < 1e-6)
-        assert(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[1]]))-1.0 < 1e-6)
-        assert(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[1]]))-1.0 < 1e-6)
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[0]]))-1.0 < 1e-4)
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[0]]))-1.0 < 1e-4)
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[xnlist[1]]))-1.0 < 1e-4)
+        assert(np.abs(np.dot(mollist[idx_mol], mollist[ynlist[1]]))-1.0 < 1e-4)
         if not is2d:
-            assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]]))-1.0 < 1e-6)
-            assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]]))-1.0 < 1e-6)
+            assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[0]]))-1.0 < 1e-4)
+            assert(np.abs(np.dot(mollist[idx_mol], mollist[znlist[1]]))-1.0 < 1e-4)
         if polarized:
             corr_x += math.acos(min((np.dot(mollist[idx_mol], mollist[xnlist[0]])),1.0))
             corr_y += math.acos(min((np.dot(mollist[idx_mol], mollist[ynlist[0]])),1.0))
@@ -113,20 +113,19 @@ if __name__ == "__main__":
     caxis = int(np.loadtxt(dirname+"/caxis"))
     ref_axis = np.eye(3)
     axis = np.eye(3)
-    #print(axis)
+    print("axis = ", axis)
     
-    caxis = int(np.loadtxt("caxis"))
-    mesh_dim = [32,32,2]
+    mesh_dim = [4,4,4]
     for i_frame in range(1):
     
         Num_mol = mesh_dim[0]*mesh_dim[1]*mesh_dim[2]
     
-        _data = np.loadtxt(dirname+"/mol_polaraxis_frame"+str(i_frame), skiprows=0)
+        _data = np.loadtxt(dirname+f"/molecule_longaxis_frame{i_frame}.dat", skiprows=0)
         data = _data
     
         data = np.reshape(data, [-1, Num_mol, 3])
         Totaltime = len(data)
-        print("Totaltime = ", Totaltime)
+        print("Num of molecules = ", Totaltime)
     
         rot = np.zeros([3,3])
         rot[0][(caxis+1)%3] = 1

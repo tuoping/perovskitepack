@@ -559,7 +559,7 @@ class FAPbI3(object):
                 for idx_N,N in enumerate(coords_N):
                     if len(indices) == 3:
                         break
-                    d = np.linalg.norm(distance(N, C, cell))
+                    d = get_distances(N, C, cell, pbc=True)[1][0][0]
                     if d < self.cutoff_CN_H:
                         coords.append(N)
                         indices.append(list_N[0][idx_N])
@@ -567,7 +567,7 @@ class FAPbI3(object):
                 for idx_H,H in enumerate(coords_H):
                     if len(indices) == 4:
                         break
-                    d = np.linalg.norm(distance(H, C, cell))
+                    d = get_distances(H, C, cell, pbc=True)[1][0][0]
                     if d < self.cutoff_CN_H:
                         coords.append(H)
                         indices.append(list_H[0][idx_H])
@@ -580,7 +580,7 @@ class FAPbI3(object):
                     if len(indices) == 8:
                         break
                     for idx_H,H in enumerate(coords_H):
-                        d = np.linalg.norm(distance(H, N, cell))
+                        d = get_distances(H, N, cell, pbc=True)[1][0][0]
                         if d < self.cutoff_CN_H:
                             coords.append(H)
                             indices.append(list_H[0][idx_H])
@@ -621,7 +621,7 @@ class FAPbI3(object):
                 for idx_N,N in enumerate(coords_N):
                     if len(indices) == 2:
                         break
-                    d = np.linalg.norm(distance(N, C, cell))
+                    d = get_distances(N, C, cell, pbc=True)[1][0][0]
                     if d < self.cutoff_CN_H:
                         coords.append(N)
                         indices.append(list_N[0][idx_N])
@@ -630,7 +630,7 @@ class FAPbI3(object):
                 for idx_H,H in enumerate(coords_H):
                     if len(indices) == 5:
                         break
-                    d = np.linalg.norm(distance(H, C, cell))
+                    d = get_distances(H, C, cell, pbc=True)[1][0][0]
                     if d < self.cutoff_CN_H:
                         coords.append(H)
                         indices.append(list_H[0][idx_H])
@@ -646,7 +646,7 @@ class FAPbI3(object):
                     for idx_H,H in enumerate(coords_H):
                         if len(indices) == 8:
                             break
-                        d = np.linalg.norm(distance(H, N, cell))
+                        d = get_distances(H, N, cell, pbc=True)[1][0][0]
                         if d < self.cutoff_CN_H:
                             coords.append(H)
                             indices.append(list_H[0][idx_H])
