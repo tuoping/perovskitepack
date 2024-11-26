@@ -26,6 +26,7 @@ if __name__ == "__main__":
                 raise Exception("Unknown file format")
     traj = dpdata.System(filename)
     for i_frame in range(traj.get_nframes()):
+        print("Frame:: ", i_frame)
         frm = traj[i_frame]
         cubic = FAPbI3(frm, fmt=fmt)
         

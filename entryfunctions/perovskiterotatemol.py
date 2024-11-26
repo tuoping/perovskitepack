@@ -2,9 +2,11 @@ from copy import deepcopy
 import dpdata
 # from pymatgen.core.operations import SymmOp
 import numpy as np
-import sys
+import sys,os
 import time
 
+SCRIPT_DIR="/nfs/scistore23/chenggrp/ptuo/pkgs/perovskitepack/"
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 from perovskitelattpack import *
 
 if __name__ == "__main__":
@@ -54,8 +56,8 @@ if __name__ == "__main__":
                 #     cubic.rotate_moleculelongaxis_by_idx(idx, [0,0,1], math.radians(-14))
                 pass
             else:
-                if mol.angle_longaxis[0] > mol.angle_longaxis[1]:
-                    cubic.rotate_moleculelongaxis_by_idx(idx, [0,0,1], math.radians(-28))
-                else:
-                    cubic.rotate_moleculelongaxis_by_idx(idx, [0,0,1], math.radians(28))
+                rotaxis = np.random.randn(3)  # Random vector in 3D
+                rotaxis = rotaxis / np.linalg.norm(rotaxis)  # Normalize to make it a unit vector
+                rotangle = np.random.uniform(0, 360)
+                cubic.rotate_moleculelongaxis_by_idx(idx, rotaxis, math.radians(rotangle))
         cubic.cubic.to_lammps_lmp("POSCAR_rotated.lmp")

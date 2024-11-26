@@ -382,7 +382,7 @@ class Molecule(object):
         m = op.rotation_matrix
         centered_coords = np.zeros(self.coords_mol.shape)
         for i in range(len(self.coords_mol)):
-            centered_coords[i] = distance(self.center_coord, self.coords_mol[i], self.cell)
+            centered_coords[i] = get_distances(self.center_coord, self.coords_mol[i], self.cell, pbc=True)[0][0][0]
         new_coords = np.zeros(self.coords_mol.shape)
         for idx, c in enumerate(centered_coords):
             new_coords[idx] = np.dot(m, c.T).T
@@ -560,7 +560,7 @@ class FAPbI3(object):
                     if len(indices) == 3:
                         break
                     d = get_distances(N, C, cell, pbc=True)[1][0][0]
-                    if d < self.cutoff_CN_H:
+                    if d < self.cutoff_CN_H["CN"]:
                         coords.append(N)
                         indices.append(list_N[0][idx_N])
                 # Find Ha: H atoms bonded to C
@@ -568,7 +568,7 @@ class FAPbI3(object):
                     if len(indices) == 4:
                         break
                     d = get_distances(H, C, cell, pbc=True)[1][0][0]
-                    if d < self.cutoff_CN_H:
+                    if d < self.cutoff_CN_H["CH"]:
                         coords.append(H)
                         indices.append(list_H[0][idx_H])
                         self.cubic_6types["atom_types"][indices[-1]] = self.types_6types["Ha"]
@@ -581,7 +581,7 @@ class FAPbI3(object):
                         break
                     for idx_H,H in enumerate(coords_H):
                         d = get_distances(H, N, cell, pbc=True)[1][0][0]
-                        if d < self.cutoff_CN_H:
+                        if d < self.cutoff_CN_H["NH"]:
                             coords.append(H)
                             indices.append(list_H[0][idx_H])
 
@@ -622,7 +622,7 @@ class FAPbI3(object):
                     if len(indices) == 2:
                         break
                     d = get_distances(N, C, cell, pbc=True)[1][0][0]
-                    if d < self.cutoff_CN_H:
+                    if d < self.cutoff_CN_H["CN"]:
                         coords.append(N)
                         indices.append(list_N[0][idx_N])
                 assert len(indices) == 2, print("C+N:", np.array(indices)+1) 
@@ -631,7 +631,7 @@ class FAPbI3(object):
                     if len(indices) == 5:
                         break
                     d = get_distances(H, C, cell, pbc=True)[1][0][0]
-                    if d < self.cutoff_CN_H:
+                    if d < self.cutoff_CN_H["CH"]:
                         coords.append(H)
                         indices.append(list_H[0][idx_H])
                         self.cubic_6types["atom_types"][indices[-1]] = self.types_6types["Ha"]
@@ -647,7 +647,7 @@ class FAPbI3(object):
                         if len(indices) == 8:
                             break
                         d = get_distances(H, N, cell, pbc=True)[1][0][0]
-                        if d < self.cutoff_CN_H:
+                        if d < self.cutoff_CN_H["NH"]:
                             coords.append(H)
                             indices.append(list_H[0][idx_H])
 
@@ -758,7 +758,7 @@ class FAPbI3(object):
     def setcutoff_I_Pb(self, cutoff = 3.5):
         self.cutoff_I_Pb = cutoff
 
-    def setcutoff_CN_H(self, cutoff = 1.5):
+    def setcutoff_CN_H(self, cutoff ={"CH": 1.9, "NH": 1.6, "CN": 2.0}):
         self.cutoff_CN_H = cutoff
 
     def extract_octahedron_from_indices(self, indices_octahedra):
@@ -1051,7 +1051,7 @@ if __name__ == "__main__":
     
     # set cutoff of bonds
     cubic.setcutoff_I_Pb(5.0)
-    cubic.setcutoff_CN_H(1.6)
+    cubic.setcutoff_CN_H({"CH": 1.9, "NH": 1.6, "CN": 2.0})
 
     # start a mesh
     mesh_dim = [8,8,8]
