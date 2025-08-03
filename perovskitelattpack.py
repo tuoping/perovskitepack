@@ -696,6 +696,56 @@ class FAPbI3(object):
             new_FAPbI3.cubic.data["coords"] = np.vstack((new_FAPbI3.cubic["coords"][0], np.array([coord])))[np.newaxis, :]
         return new_FAPbI3
 
+
+    def substitute_idx_by_molecule(self, idx, new_mol):
+        center = self.cubic.data["coords"][0][idx]
+        print(self.cubic.get_natoms())
+        new_FAPbI3 = self.remove_atom(idx)
+        print(new_FAPbI3.cubic.get_natoms())
+        assert len(np.mean(new_mol['coords'][0], axis=0)) == 3
+        mol_coords = center + new_mol['coords'][0] - np.mean(new_mol['coords'][0], axis=0)
+
+        types = new_mol['atom_types']
+        for i_atom, t in enumerate(types):
+            coord = mol_coords[i_atom]
+            new_atom_name = new_mol['atom_names'][t]
+            if new_atom_name in new_FAPbI3.cubic["atom_names"]:
+                new_FAPbI3.cubic["atom_numbs"][list(new_FAPbI3.cubic["atom_names"]).index(new_atom_name)] += 1
+                new_FAPbI3.cubic.data["atom_types"] = np.append(new_FAPbI3.cubic["atom_types"], list(new_FAPbI3.cubic["atom_names"]).index(new_atom_name))
+                new_FAPbI3.cubic.data["coords"] = np.vstack((new_FAPbI3.cubic["coords"][0], np.array([coord])))[np.newaxis, :]
+            else:
+                new_FAPbI3.cubic.add_atom_names([new_atom_name])
+                new_FAPbI3.cubic["atom_numbs"][-1] = 1
+                new_FAPbI3.cubic.data["atom_types"] = np.append(new_FAPbI3.cubic["atom_types"], list(new_FAPbI3.cubic["atom_names"]).index(new_atom_name))
+                new_FAPbI3.cubic.data["coords"] = np.vstack((new_FAPbI3.cubic["coords"][0], np.array([coord])))[np.newaxis, :]
+        print(new_FAPbI3.cubic.get_natoms(), new_FAPbI3.cubic['atom_numbs'])
+        return new_FAPbI3
+
+
+    def substitute_mol_by_molecule(self, idx, new_mol):
+        center = self.molecules[idx].center_coord
+        print(self.cubic.get_natoms())
+        new_FAPbI3 = self.remove_mol(idx)
+        print(new_FAPbI3.cubic.get_natoms())
+        assert len(np.mean(new_mol['coords'][0], axis=0)) == 3
+        mol_coords = center + new_mol['coords'][0] - np.mean(new_mol['coords'][0], axis=0)
+
+        types = new_mol['atom_types']
+        for i_atom, t in enumerate(types):
+            coord = mol_coords[i_atom]
+            new_atom_name = new_mol['atom_names'][t]
+            if new_atom_name in new_FAPbI3.cubic["atom_names"]:
+                new_FAPbI3.cubic["atom_numbs"][list(new_FAPbI3.cubic["atom_names"]).index(new_atom_name)] += 1
+                new_FAPbI3.cubic.data["atom_types"] = np.append(new_FAPbI3.cubic["atom_types"], list(new_FAPbI3.cubic["atom_names"]).index(new_atom_name))
+                new_FAPbI3.cubic.data["coords"] = np.vstack((new_FAPbI3.cubic["coords"][0], np.array([coord])))[np.newaxis, :]
+            else:
+                new_FAPbI3.cubic.add_atom_names([new_atom_name])
+                new_FAPbI3.cubic["atom_numbs"][-1] = 1
+                new_FAPbI3.cubic.data["atom_types"] = np.append(new_FAPbI3.cubic["atom_types"], list(new_FAPbI3.cubic["atom_names"]).index(new_atom_name))
+                new_FAPbI3.cubic.data["coords"] = np.vstack((new_FAPbI3.cubic["coords"][0], np.array([coord])))[np.newaxis, :]
+        print(new_FAPbI3.cubic.get_natoms(), new_FAPbI3.cubic['atom_numbs'])
+        return new_FAPbI3
+
     def add_atom_names(self, atom_names):
         self.cubic.add_atom_names(atom_names)
         for a in atom_names:
@@ -752,7 +802,7 @@ class FAPbI3(object):
 
     def copy(self):
         """Returns a copy of the system.  """
-        return self.__class__(deepcopy(self.cubic))
+        return self.__class__(deepcopy(self.cubic), type_map=self.cubic['atom_names'])
 
 
     def setcutoff_I_Pb(self, cutoff = 3.5):
