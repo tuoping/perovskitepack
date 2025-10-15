@@ -460,6 +460,8 @@ class FAPbI3(object):
                     self.cubic["atom_names"][idx] = elem_type
         elif fmt == "vasp/poscar":
             pass
+        elif fmt == 'xyz':
+            pass
         else:
             raise Exception("Unknown format")
         for elem_type in type_map:
@@ -567,6 +569,7 @@ class FAPbI3(object):
                 for idx_H,H in enumerate(coords_H):
                     if len(indices) == 4:
                         break
+                    
                     d = get_distances(H, C, cell, pbc=True)[1][0][0]
                     if d < self.cutoff_CN_H["CH"]:
                         coords.append(H)

@@ -553,23 +553,29 @@ class FAPbI3(object):
             for idx_C,C in enumerate(coords_C):
                 # stime = time.time()
                 indices = []
+                elem_molecules = []
                 indices.append(list_C[0][idx_C])
                 coords = []
                 coords.append(C)
+                elem_molecules.append('C')
                 for idx_N,N in enumerate(coords_N):
-                    if len(indices) == 3:
-                        break
+                    #if len(indices) == 3:
+                    #    break
                     d = get_distances(N, C, cell, pbc=True)[1][0][0]
                     if d < self.cutoff_CN_H["CN"]:
                         coords.append(N)
+                        elem_molecules.append('N')
                         indices.append(list_N[0][idx_N])
                 # Find Ha: H atoms bonded to C
                 for idx_H,H in enumerate(coords_H):
-                    if len(indices) == 4:
-                        break
+                    #if len(indices) == 4:
+                    #    break
+                    if list_H[0][idx_H] in indices:
+                        continue
                     d = get_distances(H, C, cell, pbc=True)[1][0][0]
                     if d < self.cutoff_CN_H["CH"]:
                         coords.append(H)
+                        elem_molecules.append('CH')
                         indices.append(list_H[0][idx_H])
                         self.cubic_6types["atom_types"][indices[-1]] = self.types_6types["Ha"]
                         self.cubic_6types["atom_numbs"][self.types_6types["H"]] -= 1
@@ -577,19 +583,22 @@ class FAPbI3(object):
                 # Find H atoms bonded to N
                 for idx_N in indices[1:3]:
                     N = self.cubic["coords"][0][idx_N]
-                    if len(indices) == 8:
-                        break
+                    #if len(indices) == 8:
+                    #    break
                     for idx_H,H in enumerate(coords_H):
+                        if list_H[0][idx_H] in indices:
+                            continue
                         d = get_distances(H, N, cell, pbc=True)[1][0][0]
                         if d < self.cutoff_CN_H["NH"]:
                             coords.append(H)
                             indices.append(list_H[0][idx_H])
+                            elem_molecules.append('NH')
 
                 idx += 1
                 # etime = time.time()
                 # print("find molecule: ", etime-stime)
                 # stime = etime
-                assert len(indices) == 8, print(np.array(indices)+1) 
+                assert len(indices) == 8, print(np.array(indices), elem_molecules) 
 
                 vecNN = distance(coords[1], coords[2], cell)
                 dNN = np.linalg.norm(vecNN)
@@ -1043,7 +1052,7 @@ if __name__ == "__main__":
     
     # set cutoff of bonds
     cubic.setcutoff_I_Pb(5.0)
-    cubic.setcutoff_CN_H({"CH": 1.9, "NH": 1.6, "CN": 2.0})
+    cubic.setcutoff_CN_H({"CH": 1.5, "NH": 1.5, "CN": 2.0})
 
     indices_mol = cubic.extract_mol()
     np.save("indices_mol.npy", indices_mol)
