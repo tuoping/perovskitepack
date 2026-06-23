@@ -4,8 +4,9 @@ import dpdata
 import numpy as np
 import sys,os
 import time
+from ase.geometry.geometry import get_distances
 
-SCRIPT_DIR="/nfs/scistore23/chenggrp/ptuo/pkgs/perovskitepack/"
+SCRIPT_DIR="/home/tuoping/pkgs/perovskitepack/"
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from perovskitelattpack import *
 
@@ -29,10 +30,6 @@ if __name__ == "__main__":
         frm = traj[i_frame]
         cubic = FAPbI3(frm, fmt=fmt)
         cubic.cubic.to_lammps_lmp("POSCAR.lmp")
-        
-        # set cutoff of bonds
-        cubic.setcutoff_I_Pb(5.0)
-        cubic.setcutoff_CN_H(1.6)
 
         indices_mol = np.load("indices_mol.npy")
         cubic.extract_mol_from_indices(indices_mol)
@@ -48,16 +45,18 @@ if __name__ == "__main__":
             raise Exception("mapping failed")
         '''
         for idx, mol in enumerate(cubic.molecules):
-            inter_center_coord = phys2Inter(mol.center_coord, cubic.cell)
-            if inter_center_coord[0] > 0.5:
-                # if mol.angle_longaxis[0] > mol.angle_longaxis[1]:
-                #     cubic.rotate_moleculelongaxis_by_idx(idx, [0,0,1], math.radians(14))
-                # else:
-                #     cubic.rotate_moleculelongaxis_by_idx(idx, [0,0,1], math.radians(-14))
-                pass
-            else:
-                rotaxis = np.random.randn(3)  # Random vector in 3D
-                rotaxis = rotaxis / np.linalg.norm(rotaxis)  # Normalize to make it a unit vector
-                rotangle = np.random.uniform(0, 360)
-                cubic.rotate_moleculelongaxis_by_idx(idx, rotaxis, math.radians(rotangle))
-        cubic.cubic.to_lammps_lmp("POSCAR_rotated.lmp")
+            # inter_center_coord = phys2Inter(mol.center_coord, cubic.cell)
+            rotaxis = np.random.randn(3)  # Random vector in 3D
+            rotaxis = rotaxis / np.linalg.norm(rotaxis)  # Normalize to make it a unit vector
+            rotangle = np.random.uniform(0, 360)
+            cubic.rotate_moleculelongaxis_by_idx(idx, rotaxis, math.radians(rotangle))
+        # perturb I-Pb frame
+        type_I = cubic.cubic["atom_names"].index("I")
+        type_Pb = cubic.cubic["atom_names"].index("Pb")
+        list_I = np.where(cubic.cubic["atom_types"]==type_I)
+        list_Pb = np.where(cubic.cubic["atom_types"]==type_Pb)
+        cubic.cubic["coords"][0][list_I[0]] += np.random.normal(scale=0.2, size=(list_I[0].shape[0], 3))
+        cubic.cubic["coords"][0][list_Pb[0]] += np.random.normal(scale=0.2, size=(list_Pb[0].shape[0], 3))
+
+        # cubic.cubic.to_lammps_lmp("POSCAR_rotated.lmp")
+        cubic.cubic.to_vasp_poscar("POSCAR_rotated.vasp")

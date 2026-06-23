@@ -1037,17 +1037,17 @@ def frame_order_parameter_by_mesh(mesh, octlist, cell):
 if __name__ == "__main__":
     filename = sys.argv[1]
     # import cubic perovskite
-    if filename.endswith(".lmp"):
+    if filename.endswith(".lmp") or filename.endswith(".dat"):
         fmt = "lammps/lmp"
+    elif filename.endswith(".lammpstrj") or filename.endswith(".dump"):
+        fmt = "lammps/dump"
+    elif filename.endswith(".xyz") or filename.endswith(".extxyz"):
+        fmt = "xyz"
+    elif filename.endswith(".vasp") or filename.endswith("POSCAR") or filename.endswith("CONTCAR"):
+        fmt = "vasp/poscar"
     else:
-        if filename.endswith(".lammpstrj") or filename.endswith(".dump"):
-            fmt = "lammps/dump"
-        else:
-            if filename.endswith(".vasp") or filename.endswith("POSCAR") or filename.endswith("CONTCAR"):
-                fmt = "vasp/poscar"
-            else:
-                raise Exception("Unknown file format")
-    cubic = FAPbI3(filename, fmt=fmt)
+        raise Exception("Unknown file format")
+    cubic = FAPbI3(filename, fmt=fmt, type_map=['C', "I", "Pb", "H", "N"])
     cubic.cubic.to_lammps_lmp("t.lmp")
     
     # set cutoff of bonds
